@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useAuthStore } from '@/lib/auth/authStore';
 import { getWellnessData, getTodayStr, getStorage, type WellnessData } from '@/lib/storage';
 import type { Section } from '../WellnessApp';
 import {
@@ -21,15 +22,54 @@ interface ActivityLogEntry {
   createdAt: number;
 }
 
+interface AreaSummary {
+  areaKey: string;
+  count: number;
+  latestScore: number | null;
+  latestRisk: string | null;
+  avgScore: number;
+  latestDate: string | null;
+}
+
 interface DashboardProps {
   onNavigate: (section: Section) => void;
 }
 
+const AREA_CONFIG: { key: string; icon: string; navKey: string; section: Section }[] = [
+  { key: 'mental', icon: '🧠', navKey: 'mentalHealth', section: 'mentalHealth' },
+  { key: 'nutrition', icon: '🥗', navKey: 'nutrition', section: 'nutrition' },
+  { key: 'physical', icon: '🏃', navKey: 'exercise', section: 'exercise' },
+  { key: 'hydration', icon: '💧', navKey: 'hydration', section: 'hydration' },
+  { key: 'sleep', icon: '😴', navKey: 'sleep', section: 'sleep' },
+  { key: 'biomarkers', icon: '🩺', navKey: 'biomarkers', section: 'biomarkers' },
+  { key: 'habits', icon: '🍺', navKey: 'habits', section: 'habits' },
+  { key: 'social', icon: '👥', navKey: 'social', section: 'social' },
+  { key: 'prevention', icon: '🛡️', navKey: 'prevention', section: 'prevention' },
+];
+
+function getScoreColor(score: number | null): string {
+  if (score === null) return 'text-muted-foreground';
+  if (score >= 7) return 'text-green-500';
+  if (score >= 5) return 'text-blue-500';
+  if (score >= 3) return 'text-yellow-500';
+  return 'text-red-500';
+}
+
+function getBarColor(score: number | null): string {
+  if (score === null) return 'bg-muted';
+  if (score >= 7) return 'bg-green-500';
+  if (score >= 5) return 'bg-blue-500';
+  if (score >= 3) return 'bg-yellow-500';
+  return 'bg-red-500';
+}
+
 export default function Dashboard({ onNavigate }: DashboardProps) {
   const { t } = useLanguage();
+  const { isAuthenticated } = useAuthStore();
   const [data, setData] = useState<WellnessData>(() => getWellnessData());
   const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>(() => getStorage<ActivityLogEntry[]>('profile-activity-log', []));
   const [profileScore, setProfileScore] = useState<{ totalPoints: number; todayPoints: number; level: string; levelName: string } | null>(null);
+  const [areaSummary, setAreaSummary] = useState<AreaSummary[]>([]);
 
   // Load profile score from server
   useEffect(() => {
@@ -44,6 +84,21 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
     };
     loadScore();
   }, []);
+
+  // Load assessment area summary from server
+  const loadAreaSummary = useCallback(() => {
+    if (!isAuthenticated) return;
+    fetch('/api/assessments')
+      .then(r => r.json())
+      .then(d => {
+        if (d.areaSummary) setAreaSummary(d.areaSummary);
+      })
+      .catch(() => { /* silent */ });
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    loadAreaSummary();
+  }, [loadAreaSummary]);
 
   const today = getTodayStr();
   const todayLog = useMemo(() => activityLog.filter(l => l.date === today), [activityLog, today]);
@@ -195,6 +250,41 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
           ))}
         </div>
       </div>
+
+      {/* Health Assessment Scores */}
+      {isAuthenticated && (
+        <div>
+          <h3 className="font-semibold text-foreground mb-3">{t.dashboard.wellnessScore}</h3>
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
+            {AREA_CONFIG.map(area => {
+              const summary = areaSummary.find(s => s.areaKey === area.key);
+              const score = summary?.latestScore ?? null;
+              const scoreColor = getScoreColor(score);
+              const barColor = getBarColor(score);
+              const barWidth = score !== null ? (score / 10) * 100 : 0;
+              return (
+                <button
+                  key={area.key}
+                  onClick={() => onNavigate(area.section)}
+                  className="bg-card rounded-2xl p-4 border border-border hover:shadow-md transition-all flex flex-col items-center gap-2 group"
+                >
+                  <span className="text-2xl">{area.icon}</span>
+                  <p className="text-xs text-muted-foreground font-medium text-center leading-tight">{(t.nav as Record<string, string>)[area.navKey]}</p>
+                  <p className={`text-lg font-bold ${scoreColor}`}>
+                    {score !== null ? `${score}/10` : '—'}
+                  </p>
+                  <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${barColor}`}
+                      style={{ width: `${barWidth}%` }}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Profile Score Card */}
       {totalPoints > 0 && (

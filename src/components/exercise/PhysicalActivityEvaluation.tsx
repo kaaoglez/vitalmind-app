@@ -208,6 +208,13 @@ export default function PhysicalActivityEvaluation() {
           setSavedAssessments(prev => [result.assessment, ...prev]);
           setViewReport(result.assessment);
         }
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          setSubmitError('You must be logged in to save reports. Please log in and try again.');
+        } else {
+          setSubmitError(String(errorData.error || `Failed to save assessment (${res.status}). Please try again.`));
+        }
       }
     } catch { setSubmitError('Failed to save assessment. Please try again.'); }
     setIsSubmitting(false);
