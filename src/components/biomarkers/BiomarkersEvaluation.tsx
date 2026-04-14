@@ -119,7 +119,9 @@ export default function BiomarkersEvaluation() {
     if (!isAuthenticated) return;
     fetch('/api/biomarkers-assessment').then(r => r.json()).then(d => {
       if (d.assessments) setSavedAssessments(d.assessments);
-    }).catch(() => {});
+    }).catch(err => {
+  console.warn('Failed to load saved assessments:', err);
+});
   }, [isAuthenticated]);
 
   const results = useMemo(() => calcScore(data), [data]);
@@ -687,7 +689,11 @@ export default function BiomarkersEvaluation() {
                 </Button>
               )}
             </div>
-            {submitError && <p className="text-sm text-red-500 mt-2">{submitError}</p>}
+            {submitError && (
+  <div className="mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50">
+    <p className="text-sm text-red-600 dark:text-red-400 font-medium">{submitError}</p>
+  </div>
+)}
           </CardContent>
         </Card>
       )}

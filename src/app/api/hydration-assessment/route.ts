@@ -9,6 +9,14 @@ async function getUserId(request: NextRequest): Promise<string | null> {
   return payload?.userId ?? null;
 }
 
+// Count set bits in a bitmask (for dehydration signs)
+function countBits(mask: number): number {
+  let count = 0;
+  let n = mask;
+  while (n) { count += n & 1; n >>= 1; }
+  return count;
+}
+
 // Compute hydration area score (0-10)
 function calcHydrationScore(
   data: Record<string, unknown>,
@@ -19,7 +27,8 @@ function calcHydrationScore(
   const withMeals = Number(data.withMeals) || 5;
   const duringExercise = Number(data.duringExercise) || 5;
   const urineColor = Number(data.urineColor) || 3;
-  const dehydrationSigns = Number(data.dehydrationSigns) || 0;
+  const dehydrationSignsMask = Number(data.dehydrationSigns) || 0;
+  const dehydCount = countBits(dehydrationSignsMask); // count actual signs from bitmask
   const sugaryFreq = Number(data.sugaryDrinksFreq) || 3;
   const caffeineFreq = Number(data.caffeineDrinksFreq) || 3;
   const alcoholFreq = Number(data.alcoholDrinksFreq) || 1;
@@ -61,8 +70,8 @@ function calcHydrationScore(
   const morningBonus = firstGlass ? 0.25 : 0;
   const habitTotal = habitScore + morningBonus;
 
-  // 4. Dehydration signs penalty (0 to -2)
-  const dehydPenalty = Math.min(dehydrationSigns * 0.3, 2);
+  // 4. Dehydration signs penalty (0 to -2) - use count of actual signs
+  const dehydPenalty = Math.min(dehydCount * 0.3, 2);
 
   // 5. Beverage quality (0-1.5 points) - less sugary/caffeine/alcohol = better
   const beverageAvg = ((10 - sugaryFreq) + (10 - caffeineFreq) + (10 - alcoholFreq)) / 3;
@@ -76,11 +85,11 @@ function calcHydrationScore(
   const raw = volumeScore + urineScore + habitTotal - dehydPenalty + beverageScore + climateAdj;
   const score = Math.round(Math.min(10, Math.max(0, raw)));
 
-  // Risk level
+  // Risk level - use actual count of dehydration signs
   let riskLevel = 'good';
-  if (urineColor >= 6 || dehydrationSigns >= 5 || dailyLiters < 0.8) riskLevel = 'urgent';
-  else if (urineColor >= 5 || dehydrationSigns >= 3 || score <= 4) riskLevel = 'risk';
-  else if (urineColor >= 4 || dehydrationSigns >= 2 || score <= 6) riskLevel = 'mild';
+  if (urineColor >= 6 || dehydCount >= 5 || dailyLiters < 0.8) riskLevel = 'urgent';
+  else if (urineColor >= 5 || dehydCount >= 3 || score <= 4) riskLevel = 'risk';
+  else if (urineColor >= 4 || dehydCount >= 2 || score <= 6) riskLevel = 'mild';
 
   return { score, riskLevel, recommendedMlPerKg };
 }
@@ -149,6 +158,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ assessment }, { status: 201 });
   } catch (error) {
     console.error('Create hydration assessment error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

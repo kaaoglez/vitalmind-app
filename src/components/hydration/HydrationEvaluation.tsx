@@ -151,7 +151,9 @@ export default function HydrationEvaluation() {
     if (!isAuthenticated) return;
     fetch('/api/hydration-assessment').then(r => r.json()).then(d => {
       if (d.assessments) setSavedAssessments(d.assessments);
-    }).catch(() => {});
+    }).catch(err => {
+  console.warn('Failed to load saved assessments:', err);
+});
     fetch('/api/user-profile').then(r => r.json()).then(d => {
       if (d.profile) {
         setProfileData({
@@ -159,7 +161,9 @@ export default function HydrationEvaluation() {
           profileComplete: d.profile.profileComplete || false,
         });
       }
-    }).catch(() => {});
+    }).catch(err => {
+  console.warn('Failed to load user profile:', err);
+});
   }, [isAuthenticated]);
 
   const weight = profileData?.weight || 0;
@@ -623,7 +627,11 @@ export default function HydrationEvaluation() {
                 </Button>
               )}
             </div>
-            {submitError && <p className="text-sm text-red-500 mt-2">{submitError}</p>}
+            {submitError && (
+  <div className="mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50">
+    <p className="text-sm text-red-600 dark:text-red-400 font-medium">{submitError}</p>
+  </div>
+)}
           </CardContent>
         </Card>
       )}

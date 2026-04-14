@@ -120,18 +120,19 @@ export const useAuthStore = create<AuthState>((set) => ({
         localStorage.setItem('vitalmind-session', JSON.stringify(data.user));
         return;
       }
+      // Server responded but session is invalid (401) - clear stale data
+      localStorage.removeItem('vitalmind-session');
+      set({ user: null, isAuthenticated: false });
     } catch {
-      // Server unreachable, try localStorage fallback
-    }
-
-    // Fallback to localStorage for offline support
-    const saved = localStorage.getItem('vitalmind-session');
-    if (saved) {
-      try {
-        const user = JSON.parse(saved);
-        set({ user, isAuthenticated: true });
-      } catch {
-        localStorage.removeItem('vitalmind-session');
+      // Server unreachable (network error) - try localStorage fallback for offline support
+      const saved = localStorage.getItem('vitalmind-session');
+      if (saved) {
+        try {
+          const user = JSON.parse(saved);
+          set({ user, isAuthenticated: true });
+        } catch {
+          localStorage.removeItem('vitalmind-session');
+        }
       }
     }
   },

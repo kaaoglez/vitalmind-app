@@ -133,6 +133,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ assessment }, { status: 201 });
   } catch (error) {
     console.error('Create nutrition assessment error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
