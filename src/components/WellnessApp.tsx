@@ -22,8 +22,9 @@ import Biomarkers from './biomarkers/Biomarkers';
 import Habits from './habits/Habits';
 import Social from './social/Social';
 import Prevention from './prevention/Prevention';
+import Reports from './reports/Reports';
 
-export type Section = 'dashboard' | 'mentalHealth' | 'nutrition' | 'exercise' | 'hydration' | 'sleep' | 'biomarkers' | 'habits' | 'social' | 'prevention' | 'challenges' | 'progress' | 'crisisNumbers' | 'profile' | 'assessment' | 'userProfile';
+export type Section = 'dashboard' | 'mentalHealth' | 'nutrition' | 'exercise' | 'hydration' | 'sleep' | 'biomarkers' | 'habits' | 'social' | 'prevention' | 'challenges' | 'progress' | 'crisisNumbers' | 'profile' | 'assessment' | 'reports' | 'userProfile';
 
 export default function WellnessApp() {
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
@@ -77,6 +78,7 @@ export default function WellnessApp() {
       case 'challenges': return <Challenges />;
       case 'progress': return <Progress />;
       case 'assessment': return <HealthAssessment />;
+      case 'reports': return <Reports />;
       case 'userProfile': return <UserProfile embedded />;
       case 'crisisNumbers': return <CrisisNumbers />;
       case 'profile': return <Profile />;

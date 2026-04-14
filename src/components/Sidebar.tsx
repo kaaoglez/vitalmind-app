@@ -23,6 +23,7 @@ import {
   UserCircle,
   Activity,
   Clipboard,
+  ClipboardList,
 } from 'lucide-react';
 
 const navItems: { id: Section; icon: React.ElementType; labelKey: string }[] = [
@@ -39,6 +40,7 @@ const navItems: { id: Section; icon: React.ElementType; labelKey: string }[] = [
   { id: 'challenges', icon: Target, labelKey: 'challenges' },
   { id: 'progress', icon: BarChart3, labelKey: 'progress' },
   { id: 'assessment', icon: Activity, labelKey: 'assessment' },
+  { id: 'reports', icon: ClipboardList, labelKey: 'reports' },
   { id: 'userProfile', icon: Clipboard, labelKey: 'userProfile' },
 ];
 
