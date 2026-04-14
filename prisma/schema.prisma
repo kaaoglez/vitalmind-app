@@ -1,32 +1,690 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String         @id @default(cuid())
+  email        String         @unique
+  name         String
+  passwordHash String?
+  googleId     String?        @unique
+  avatar       String?
+  language     String         @default("en")
+  darkMode     Boolean        @default(false)
+  plan         String         @default("free")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  wellnessData    WellnessData?
+  moodLogs        MoodLog[]
+  exerciseLogs    ExerciseLog[]
+  challengeLogs   ChallengeLog[]
+  customRecipes   CustomRecipe[]
+  customMusic     CustomMusic[]
+  customExercises CustomExercise[]
+  activityLogs    ActivityLog[]
+  healthAssessments HealthAssessment[]
+  mentalAssessments MentalAssessment[]
+  nutritionAssessments NutritionAssessment[]
+  physicalActivityAssessments PhysicalActivityAssessment[]
+  hydrationAssessments HydrationAssessment[]
+  sleepAssessments SleepAssessment[]
+  biomarkersAssessments BiomarkersAssessment[]
+  habitsAssessments HabitsAssessment[]
+  socialAssessments SocialAssessment[]
+  preventionAssessments PreventionAssessment[]
+  userProfile     UserProfile?
 }
 
-model Post {
+model WellnessData {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  stressLevel     Int      @default(5)
+  waterGlasses    Int      @default(0)
+  waterDate       String   @default("")
+  sleepAnswers    String   @default("[]")
+  exerciseMinutes Int      @default(0)
+  exerciseWeek    String   @default("")
+  selfCareChecked String   @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MoodLog {
   id        String   @id @default(cuid())
+  userId    String
+  date      String
+  mood      String
+  emotions  String   @default("[]")
+  note      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model ExerciseLog {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String
+  minutes   Int
+  type      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChallengeLog {
+  id            String   @id @default(cuid())
+  userId        String
+  challengeName String
+  completedAt   DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeName])
+}
+
+// --- Personalize Your Profile Models ---
+
+model CustomRecipe {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  ingredients String   @default("")
+  steps       String   @default("")
+  time        Int      @default(0)
+  calories    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CustomMusic {
+  id        String   @id @default(cuid())
+  userId    String
   title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  url       String
+  category  String   @default("Meditation")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CustomExercise {
+  id             String   @id @default(cuid())
+  userId         String
+  name           String
+  duration       Int      @default(0)
+  type           String   @default("Cardio")
+  notes          String   @default("")
+  caloriesBurned Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id             String   @id @default(cuid())
+  userId         String
+  type           String   // "exercise" | "nutrition" | "relaxation"
+  name           String
+  duration       Int      @default(0)
+  calories       Int      @default(0)
+  caloriesBurned Int      @default(0)
+  date           String   // YYYY-MM-DD
+  points         Int      @default(0)
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- User Mini-Profile (Hybrid Onboarding) ---
+
+model UserProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  // Core profile data (filled once, used across all 9 areas)
+  age         Int     @default(0)       // years
+  gender      String  @default("")      // male | female | other | preferNotToSay
+  weight      Float   @default(0)       // kg
+  height      Float   @default(0)       // cm
+  smoking     String  @default("never") // never | former | current
+  alcoholFreq String  @default("never") // never | occasional | weekly | daily
+
+  // Computed from profile
+  bmi         Float   @default(0)       // auto-calculated: weight / (height/100)^2
+
+  // Optional clinical data (Capa 3 - filled when available)
+  systolicBP       Int?    // mmHg
+  diastolicBP      Int?    // mmHg
+  fastingGlucose   Int?    // mg/dL
+  totalCholesterol Int?    // mg/dL
+  hdl              Int?    // mg/dL
+  restingHR        Int?    // bpm
+
+  // Profile completeness tracking
+  profileComplete Boolean @default(false)
+  onboardingDone  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- Integral Health Assessment Model ---
+
+model HealthAssessment {
+  id     String @id @default(cuid())
+  userId String
+
+  // Personal info
+  age    Int    @default(0)
+  gender String @default("")
+  weight Float  @default(0) // kg
+  height Float  @default(0) // cm
+
+  // 1. Salud Mental y Emocional (0-10)
+  mentalStress       Int @default(5) // 1-10
+  mentalMood         Int @default(5)
+  mentalEmotionReg   Int @default(5)
+  mentalSocialRel    Int @default(5)
+  mentalPurpose      Int @default(5)
+  mentalNegThoughts  Int @default(5)
+  mentalWeeklySocial Int @default(3)
+  mentalScore        Int @default(0)
+
+  // 2. Nutricion (0-10)
+  nutDietQuality   Int   @default(5)
+  nutMacroBalance  Int   @default(5)
+  nutProcessedFreq Int   @default(5) // inverse
+  nutDeficiencies  String @default("")
+  nutNaturalPct    Int   @default(50)
+  nutFruitVegServ  Int   @default(3)
+  nutProteinPerKg  Float @default(1.0)
+  nutBMI           Float @default(0)
+  nutScore         Int   @default(0)
+
+  // 3. Actividad Fisica (0-10)
+  physWeeklyMin  Int @default(0)
+  physCardio     Int @default(5)
+  physStrength   Int @default(5)
+  physMobility   Int @default(5)
+  physDailySteps Int @default(5000)
+  physRestingHR  Int @default(70)
+  physScore      Int @default(0)
+
+  // 4. Hidratacion (0-10)
+  hydDailyLiters      Float @default(1.5)
+  hydFrequency        Int   @default(5)
+  hydDehydrationSigns Int   @default(0)
+  hydScore            Int   @default(0)
+
+  // 5. Sueno (0-10)
+  slpHours       Float @default(7)
+  slpQuality     Int   @default(5)
+  slpTimeToFall  Int   @default(15)
+  slpEnergyWakeup Int  @default(5)
+  slpCircadian   Int   @default(5)
+  slpScore       Int   @default(0)
+
+  // 6. Biomarcadores (0-10)
+  bioSystolicBP       Int @default(120)
+  bioDiastolicBP      Int @default(80)
+  bioFastingGlucose   Int @default(90)
+  bioTotalCholesterol Int @default(200)
+  bioHDL              Int @default(50)
+  bioRestingHR        Int @default(70)
+  bioScore            Int @default(0)
+
+  // 7. Habitos y Estilo de Vida (0-10)
+  habAlcoholWeekly Int    @default(0)
+  habSmoking       String @default("never")
+  habScreenHours   Float  @default(4)
+  habRoutineScore  Int    @default(5)
+  habScore         Int    @default(0)
+
+  // 8. Entorno Social (0-10)
+  socSupport         Int @default(5)
+  socJobSatisfaction Int @default(5)
+  socIsolation       Int @default(5)
+  socScore           Int @default(0)
+
+  // 9. Prevencion y Control Medico (0-10)
+  prevLastCheckup   String @default("within-year")
+  prevExamsUpToDate Int    @default(5)
+  prevVaccination   Int    @default(5)
+  prevScore         Int    @default(0)
+
+  // Computed totals
+  totalScore Int    @default(0)
+  riskLevel  String @default("good")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- Mental Health Assessment (PHQ-9 + GAD-7) ---
+
+model MentalAssessment {
+  id     String @id @default(cuid())
+  userId String
+
+  // PHQ-9 (9 items, each 0-3, total 0-27)
+  phq1  Int @default(0) // Little interest or pleasure
+  phq2  Int @default(0) // Feeling down, depressed, hopeless
+  phq3  Int @default(0) // Trouble falling/staying asleep
+  phq4  Int @default(0) // Feeling tired or little energy
+  phq5  Int @default(0) // Poor appetite or overeating
+  phq6  Int @default(0) // Feeling bad about yourself
+  phq7  Int @default(0) // Trouble concentrating
+  phq8  Int @default(0) // Moving/speaking slowly or fidgety
+  phq9  Int @default(0) // Thoughts of hurting yourself
+  phqTotal Int @default(0)
+  phqSeverity String @default("none") // none | mild | moderate | modSevere | severe
+
+  // GAD-7 (7 items, each 0-3, total 0-21)
+  gad1  Int @default(0) // Feeling nervous, anxious
+  gad2  Int @default(0) // Not being able to stop worrying
+  gad3  Int @default(0) // Worrying too much about things
+  gad4  Int @default(0) // Trouble relaxing
+  gad5  Int @default(0) // Being so restless it's hard to sit still
+  gad6  Int @default(0) // Becoming easily annoyed/irritable
+  gad7  Int @default(0) // Feeling afraid something awful might happen
+  gadTotal Int @default(0)
+  gadSeverity String @default("none") // none | mild | moderate | severe
+
+  // Additional indicators
+  perceivedStress     Int @default(5)  // 1-10 scale
+  emotionalRegulation Int @default(5)  // 1-10 scale
+  socialRelationships Int @default(5)  // 1-10 scale
+  senseOfPurpose      Int @default(5)  // 1-10 scale
+  weeklySocialInt     Int @default(3)  // 0-7 days
+  negThoughtsFreq     Int @default(5)  // 1-10 scale
+
+  // Computed area score (0-10)
+  mentalScore   Int    @default(0)
+  riskLevel     String @default("good")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- Nutrition Assessment (Area 2) ---
+
+model NutritionAssessment {
+  id     String @id @default(cuid())
+  userId String
+
+  // Food Frequency Questionnaire (FFQ) - 10 items, each 0-4
+  // 0=Never, 1=Rarely(1-2/month), 2=Sometimes(1-2/week), 3=Often(3-4/week), 4=Daily
+  ffq1  Int @default(0) // Fruits and vegetables (positive - more is better)
+  ffq2  Int @default(0) // Whole grains (positive)
+  ffq3  Int @default(0) // Legumes and nuts (positive)
+  ffq4  Int @default(0) // Fish and lean proteins (positive)
+  ffq5  Int @default(0) // Water and natural beverages (positive)
+  ffq6  Int @default(0) // Processed/ultra-processed foods (inverse - less is better)
+  ffq7  Int @default(0) // Sugary drinks and sweets (inverse)
+  ffq8  Int @default(0) // Fast food (inverse)
+  ffq9  Int @default(0) // Excessive salt/sodium (inverse)
+  ffq10 Int @default(0) // Alcohol with meals (inverse)
+  ffqTotal Int @default(0)
+
+  // Additional measurable indicators
+  dietQuality     Int @default(5)  // 1-10 scale - self-assessed
+  macroBalance    Int @default(5)  // 1-10 scale
+  processedFreq   Int @default(5)  // 1-10 scale (inverse)
+  naturalFoodPct  Int @default(50) // 0-100% of diet from natural sources
+  fruitVegServ    Int @default(3)  // servings per day
+  proteinPerKg    Float @default(1.0) // grams per kg body weight
+  mealRegularity  Int @default(5)  // 1-10 scale
+  hydrationWithMeals Int @default(5) // 1-10 scale
+
+  // Computed from profile (auto-populated)
+  bmi             Float @default(0)
+
+  // Computed area score (0-10)
+  nutritionScore  Int    @default(0)
+  riskLevel       String @default("good")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- Physical Activity Assessment (Area 3) ---
+// Based on IPAQ (International Physical Activity Questionnaire) + OMS indicators
+
+model PhysicalActivityAssessment {
+  id     String @id @default(cuid())
+  userId String
+
+  // IPAQ Short Form - Vigorous activity (last 7 days)
+  ipaqVigorousDays  Int @default(0)  // days/week of vigorous activity
+  ipaqVigorousMin   Int @default(0)  // minutes/day of vigorous activity
+
+  // IPAQ Short Form - Moderate activity (last 7 days)
+  ipaqModerateDays  Int @default(0)  // days/week of moderate activity
+  ipaqModerateMin   Int @default(0)  // minutes/day of moderate activity
+
+  // IPAQ Short Form - Walking (last 7 days)
+  ipaqWalkingDays   Int @default(0)  // days/week of walking
+  ipaqWalkingMin    Int @default(0)  // minutes/day of walking
+
+  // IPAQ Short Form - Sitting
+  ipaqSittingMin    Int @default(480) // minutes/day of sitting (sedentary)
+
+  // Computed from IPAQ (MET-min/week)
+  vigorousMET       Int @default(0)   // vigorousDays * vigorousMin * 8
+  moderateMET       Int @default(0)   // moderateDays * moderateMin * 4
+  walkingMET        Int @default(0)   // walkingDays * walkingMin * 3.3
+  totalMET          Int @default(0)   // sum of all MET
+  ipaqCategory      String @default("low") // low | moderate | high
+
+  // Additional measurable indicators
+  dailySteps        Int @default(5000)   // steps per day
+  cardioEndurance   Int @default(5)      // 1-10 self-assessed
+  muscularStrength  Int @default(5)      // 1-10 self-assessed
+  mobility          Int @default(5)      // 1-10 self-assessed
+  exerciseVariety   Int @default(5)      // 1-10 variety of exercise types
+  recoveryQuality   Int @default(5)      // 1-10 post-exercise recovery
+  weeklyActiveDays  Int @default(3)      // 0-7 days with intentional exercise
+
+  // Computed from profile (auto-populated)
+  restingHR         Int @default(0)  // from UserProfile.restingHR
+
+  // Computed area score (0-10)
+  physicalScore     Int    @default(0)
+  riskLevel         String @default("good")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- Hydration Assessment (Area 4) ---
+// Based on water balance evaluation, urine color chart, and dehydration screening
+
+model HydrationAssessment {
+  id     String @id @default(cuid())
+  userId String
+
+  // Daily water intake
+  dailyLiters       Float @default(1.5)   // liters per day
+  intakeFrequency   Int @default(5)        // 1-10 how regularly they drink water
+  firstGlassMorning Boolean @default(false) // do they drink water first thing?
+  withMeals         Int @default(5)        // 1-10 hydration with meals
+  duringExercise    Int @default(5)        // 1-10 hydration during exercise
+
+  // Urine color indicator (1-8 scale, validated chart)
+  // 1=pale yellow (well hydrated) → 8=dark amber (dehydrated)
+  urineColor        Int @default(3)
+
+  // Dehydration signs checklist (count of symptoms experienced)
+  dehydrationSigns  Int @default(0)  // 0-7 count of common dehydration signs
+
+  // Beverage choices
+  sugaryDrinksFreq  Int @default(3)  // 1-10 frequency of sugary drinks
+  caffeineDrinksFreq Int @default(3) // 1-10 frequency of caffeinated drinks
+  alcoholDrinksFreq  Int @default(1) // 1-10 frequency of alcoholic drinks
+
+  // Climate and activity factors
+  hotClimate        Boolean @default(false) // lives/trains in hot climate
+  highAltitude      Boolean @default(false) // lives at high altitude
+
+  // Computed from profile (auto-populated)
+  weight            Float @default(0)  // from UserProfile - used for ml/kg calc
+  recommendedMlPerKg Float @default(0) // 30-35 ml/kg auto-calculated
+
+  // Computed area score (0-10)
+  hydrationScore    Int    @default(0)
+  riskLevel         String @default("good")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- Sleep Assessment (Area 5) ---
+// Based on PSQI (Pittsburgh Sleep Quality Index) adapted + circadian rhythm indicators
+
+model SleepAssessment {
+  id     String @id @default(cuid())
+  userId String
+
+  // PSQI-adapted questions (7 components, each scored 0-3)
+  // Component 1: Subjective sleep quality
+  psqiQuality       Int @default(0)  // 0=Very good, 1=Fairly good, 2=Fairly bad, 3=Very bad
+  // Component 2: Sleep latency
+  psqiLatency       Int @default(0)  // 0=<=15min, 1=16-30min, 2=31-60min, 3=>60min
+  // Component 3: Sleep duration
+  psqiDuration      Int @default(0)  // 0=>7h, 1=6-7h, 2=5-6h, 3=<5h
+  // Component 4: Sleep efficiency
+  psqiEfficiency    Int @default(0)  // 0=>85%, 1=75-84%, 2=65-74%, 3=<65%
+  // Component 5: Sleep disturbances
+  psqiDisturbances  Int @default(0)  // 0=0, 1=1-9, 2=10-18, 3=19-27
+  // Component 6: Use of sleep medication
+  psqiMedication    Int @default(0)  // 0=Not during past month, 1=Less than once/week, 2=Once or twice/week, 3=>=3 times/week
+  // Component 7: Daytime dysfunction
+  psqiDysfunction   Int @default(0)  // 0=0, 1=1-2, 2=3-4, 3=5-6
+  // Computed PSQI global score (0-21)
+  psqiTotal         Int @default(0)
+  psqiCategory      String @default("good") // good (0-4) | mild (5-7) | poor (8-14) | severe (15-21)
+
+  // Measurable indicators
+  sleepHours        Float @default(7)    // average hours slept per night
+  timeToFallAsleep  Int @default(15)     // minutes to fall asleep (sleep latency)
+  nightAwakenings   Int @default(1)      // times waking up per night
+  energyOnWakeup    Int @default(5)      // 1-10 energy level upon waking
+  sleepRegularity   Int @default(5)      // 1-10 consistency of sleep schedule
+  screenBeforeBed   Int @default(5)      // 1-10 screen time before bed (inverse)
+  caffeineAfternoon  Int @default(3)     // 1-10 caffeine consumption after noon (inverse)
+
+  // Circadian rhythm
+  chronotype        String @default("intermediate") // morning | intermediate | evening
+  bedtimeConsistent  Boolean @default(true)  // consistent bedtime (+-30min)
+  wakeTimeConsistent Boolean @default(true)  // consistent wake time (+-30min)
+  weekendShift       Int @default(0)  // minutes of weekend sleep shift (social jetlag)
+  circadianScore     Int @default(5)  // 1-10 circadian rhythm health
+
+  // Computed area score (0-10)
+  sleepScore        Int    @default(0)
+  riskLevel         String @default("good")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- Biomarkers Assessment (Area 6) ---
+// Based on clinical vital signs and lab reference ranges
+
+model BiomarkersAssessment {
+  id     String @id @default(cuid())
+  userId String
+
+  // Blood Pressure
+  systolicBP       Int @default(120)   // mmHg (normal <120)
+  diastolicBP      Int @default(80)    // mmHg (normal <80)
+  bpCategory       String @default("normal") // normal | elevated | high1 | high2 | crisis
+
+  // Metabolic markers
+  fastingGlucose   Int @default(90)    // mg/dL (normal 70-100)
+  totalCholesterol Int @default(200)   // mg/dL (desirable <200)
+  hdl              Int @default(50)    // mg/dL (good >60 for women, >40 for men)
+  ldl              Int @default(100)   // mg/dL (optimal <100)
+  triglycerides    Int @default(150)   // mg/dL (normal <150)
+
+  // Cardiovascular
+  restingHR        Int @default(70)    // bpm (normal 60-100)
+  hrCategory       String @default("normal") // low | normal | elevated | high
+
+  // Body composition from profile
+  bmi              Float @default(0)     // auto-calculated
+  bmiCategory      String @default("normal") // underweight | normal | overweight | obese1 | obese2 | obese3
+
+  // Additional markers
+  hemoglobin       Float @default(14.0) // g/dL (men: 13.5-17.5, women: 12.0-16.0)
+  creatinine       Float @default(1.0)  // mg/dL (men: 0.7-1.3, women: 0.6-1.1)
+  vitaminD         Float @default(30.0) // ng/mL (sufficient >=30)
+
+  // Flags
+  hasDiabetes      Boolean @default(false)
+  hasHypertension  Boolean @default(false)
+  hasDyslipidemia  Boolean @default(false)
+
+  // Computed area score (0-10)
+  biomarkersScore  Int    @default(0)
+  riskLevel        String @default("good")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- Habits and Lifestyle Assessment (Area 7) ---
+// Based on WHO STEPS instrument + screen time / routine evaluation
+
+model HabitsAssessment {
+  id     String @id @default(cuid())
+  userId String
+
+  // Alcohol consumption (AUDIT-C adapted)
+  alcoholFrequency  String @default("never") // never | monthly | weekly | daily
+  alcoholDrinksPerOccasion Int @default(0) // standard drinks per occasion
+  alcoholBinge      Boolean @default(false) // 5+ drinks on one occasion?
+  auditCScore        Int @default(0)       // 0-12
+
+  // Smoking / Tobacco
+  smokingStatus     String @default("never") // never | former | current
+  cigarettesPerDay  Int @default(0)
+  yearsSmoking      Int @default(0)
+  packYears         Float @default(0)        // cigarettes/day * years / 20
+  vapingStatus      String @default("never") // never | former | current
+
+  // Screen time and digital habits
+  screenTimeHours   Float @default(4)       // hours/day total screen time
+  recreationalScreen Float @default(2)      // hours/day non-work screen
+  screenBeforeSleep Int @default(5)         // 1-10 scale
+  socialMediaHours  Float @default(1.5)     // hours/day
+  digitalDetoxDays  Int @default(0)         // days/week without screens before bed
+
+  // Routine and lifestyle
+  routineRegularity Int @default(5)         // 1-10 consistency of daily routine
+  mealSchedule      Int @default(5)        // 1-10 consistency of meal times
+  substanceUse      String @default("none") // none | occasional | regular
+  caffeineDependency Int @default(3)       // 1-10 scale
+  stressManagement  Int @default(5)        // 1-10 effectiveness of stress coping
+
+  // Computed area score (0-10)
+  habitsScore       Int    @default(0)
+  riskLevel         String @default("good")
+  riskFactors       Json   @default("[]")
+  recommendations   Json   @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- Social Environment and Quality of Life Assessment (Area 8) ---
+// Based on MOS Social Support Survey + UCLA Loneliness Scale adapted
+
+model SocialAssessment {
+  id     String @id @default(cuid())
+  userId String
+
+  // Social support (MOS adapted)
+  emotionalSupport    Int @default(5)  // 1-10
+  instrumentalSupport Int @default(5)  // 1-10 (tangible help)
+  informationalSupport Int @default(5) // 1-10 (advice/guidance)
+  socialIntegration   Int @default(5)  // 1-10 belonging to a group
+  supportNetworkSize Int @default(3)  // number of close contacts
+
+  // Work / Occupation
+  jobSatisfaction    Int @default(5)  // 1-10
+  workLifeBalance    Int @default(5)  // 1-10
+  workStress         Int @default(5)  // 1-10 (inverse - higher = more stress)
+  commuteTime        Int @default(30) // minutes one-way
+  financialSecurity  Int @default(5)  // 1-10
+
+  // Social isolation and loneliness (UCLA Loneliness Scale adapted)
+  lonelinessFrequency Int @default(3) // 1-10 how often feel lonely
+  isolationLevel     Int @default(3)  // 1-10
+  relationshipQuality Int @default(5) // 1-10
+  communityInvolvement Int @default(5) // 1-10
+  digitalOverload    Int @default(5)  // 1-10 overwhelmed by digital communication
+
+  // Life satisfaction
+  overallSatisfaction Int @default(5) // 1-10
+  purposeInLife      Int @default(5)  // 1-10
+
+  // Computed area score (0-10)
+  socialScore        Int    @default(0)
+  riskLevel          String @default("good")
+  riskFactors        Json   @default("[]")
+  recommendations    Json   @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// --- Prevention and Medical Control Assessment (Area 9) ---
+// Based on WHO screening guidelines + USPSTF recommendations
+
+model PreventionAssessment {
+  id     String @id @default(cuid())
+  userId String
+
+  // Checkup history
+  lastCheckup        String @default("within-year") // within-year | 1-2years | 2-5years | 5+years | never
+  lastDentalCheckup  String @default("within-year")
+  lastEyeExam        String @default("within-year")
+  lastBloodWork      String @default("within-year")
+
+  // Vaccination status
+  vaccinationUpToDate Boolean @default(true)
+  fluVaccine         Boolean @default(false)
+  covidVaccine       Boolean @default(false)
+  tetanusVaccine     Boolean @default(false)
+  otherVaccines      String @default("[]") // JSON array of additional vaccines
+
+  // Cancer screening (age/gender dependent)
+  cancerScreeningUpToDate Boolean @default(true)
+  mammogramLast     String @default("never") // never | within-year | 1-2years | 2+years | na
+  papSmearLast      String @default("never")
+  colonoscopyLast   String @default("never")
+  prostateScreening String @default("never")
+  skinCheckLast     String @default("never")
+
+  // Risk factors
+  age               Int @default(0)
+  gender            String @default("")
+  familyHistory     Json @default("[]") // array of conditions
+  chronicConditions  Json @default("[]") // array of diagnosed conditions
+  medications       Json @default("[]") // array of current medications
+
+  // Preventive behaviors
+  sunProtection     Int @default(5)  // 1-10 sun protection habits
+  safeDriving       Int @default(7)  // 1-10 driving safety
+  homeSafety        Int @default(7)  // 1-10 home safety awareness
+  healthLiteracy    Int @default(5)  // 1-10 understanding of health info
+
+  // Computed area score (0-10)
+  preventionScore    Int    @default(0)
+  riskLevel          String @default("good")
+  riskFactors        Json   @default("[]")
+  recommendations    Json   @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
