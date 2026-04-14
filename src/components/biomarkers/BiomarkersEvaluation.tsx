@@ -95,7 +95,7 @@ function calcScore(d: BiomarkersEvalData) {
 
 function getRiskInfo(risk: string, et: Record<string, string>) {
   const map: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-    good: { label: et.riskGood, color: 'text-red-500', icon: <CheckCircle2 className="w-6 h-6" /> },
+    good: { label: et.riskGood, color: 'text-green-500', icon: <CheckCircle2 className="w-6 h-6" /> },
     mild: { label: et.riskMild, color: 'text-orange-500', icon: <Activity className="w-6 h-6" /> },
     risk: { label: et.riskAtRisk, color: 'text-yellow-500', icon: <AlertTriangle className="w-6 h-6" /> },
     urgent: { label: et.riskUrgent, color: 'text-red-600', icon: <ShieldAlert className="w-6 h-6" /> },
@@ -111,6 +111,7 @@ export default function BiomarkersEvaluation() {
   const [savedAssessments, setSavedAssessments] = useState<Record<string, unknown>[]>([]);
   const [viewReport, setViewReport] = useState<Record<string, unknown> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const et = t.biomarkersEval;
 
@@ -127,6 +128,7 @@ export default function BiomarkersEvaluation() {
     setData(prev => ({ ...prev, [key]: v }));
 
   const submit = async () => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/biomarkers-assessment', {
@@ -141,7 +143,7 @@ export default function BiomarkersEvaluation() {
           setViewReport(result.assessment);
         }
       }
-    } catch { /* silent */ }
+    } catch { setSubmitError('Failed to save assessment. Please try again.'); }
     setIsSubmitting(false);
   };
 
@@ -669,11 +671,16 @@ export default function BiomarkersEvaluation() {
               <Button variant="outline" onClick={() => setStep('flags')} className="gap-2">
                 <ChevronLeft className="w-4 h-4" /> {et.prev}
               </Button>
-              <Button onClick={submit} disabled={isSubmitting}
-                className="gap-2 bg-red-500 hover:bg-red-600">
-                {isSubmitting ? et.saving : et.generateReport}
-              </Button>
+              {!isAuthenticated ? (
+                <p className="text-sm text-amber-500">Please log in to generate and save reports.</p>
+              ) : (
+                <Button onClick={submit} disabled={isSubmitting}
+                  className="gap-2 bg-red-500 hover:bg-red-600">
+                  {isSubmitting ? et.saving : et.generateReport}
+                </Button>
+              )}
             </div>
+            {submitError && <p className="text-sm text-red-500 mt-2">{submitError}</p>}
           </CardContent>
         </Card>
       )}

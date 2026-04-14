@@ -349,6 +349,8 @@ model NutritionAssessment {
 
   // Computed from profile (auto-populated)
   bmi             Float @default(0)
+  height          Float @default(0)
+  weight          Float @default(0)
 
   // Computed area score (0-10)
   nutritionScore  Int    @default(0)

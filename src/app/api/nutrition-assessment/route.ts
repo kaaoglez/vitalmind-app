@@ -82,11 +82,19 @@ export async function POST(request: NextRequest) {
     );
 
     // Try to get BMI from user profile
-    let bmi = 0;
-    try {
-      const profile = await db.userProfile.findUnique({ where: { userId } });
-      if (profile && profile.bmi > 0) bmi = profile.bmi;
-    } catch { /* profile may not exist */ }
+    let bmi = Number(body.bmi) || 0;
+    let height = Number(body.height) || 0;
+    let weight = Number(body.weight) || 0;
+    if (!bmi) {
+      try {
+        const profile = await db.userProfile.findUnique({ where: { userId } });
+        if (profile && profile.bmi > 0) {
+          bmi = profile.bmi;
+          height = profile.height || 0;
+          weight = profile.weight || 0;
+        }
+      } catch { /* profile may not exist */ }
+    }
 
     const { score: nutritionScore, riskLevel } = calcNutritionScore({
       ...body, ffqTotal,
@@ -115,6 +123,8 @@ export async function POST(request: NextRequest) {
         mealRegularity: Number(body.mealRegularity) || 5,
         hydrationWithMeals: Number(body.hydrationWithMeals) || 5,
         bmi,
+        height,
+        weight,
         nutritionScore,
         riskLevel,
       },

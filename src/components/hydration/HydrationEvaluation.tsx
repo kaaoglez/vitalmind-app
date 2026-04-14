@@ -44,6 +44,13 @@ const defaultData: HydrationEvalData = {
 };
 
 const DEHYDRATION_SIGNS_COUNT = 7;
+
+function countBits(mask: number): number {
+  let count = 0;
+  let n = mask;
+  while (n) { count += n & 1; n >>= 1; }
+  return count;
+}
 const URINE_COLORS = [
   { level: 1, color: '#f5e6ab', label: 'urineL1' },
   { level: 2, color: '#f0d87a', label: 'urineL2' },
@@ -94,7 +101,8 @@ function calcScore(d: HydrationEvalData, weight: number) {
   const habitTotal = habitScore + morningBonus;
 
   // Dehydration signs penalty (0 to -2)
-  const dehydPenalty = Math.min(d.dehydrationSigns * 0.3, 2);
+  const dehydCount = countBits(d.dehydrationSigns);
+  const dehydPenalty = Math.min(dehydCount * 0.3, 2);
 
   // Beverage quality (0-1.5)
   const beverageAvg = ((10 - d.sugaryDrinksFreq) + (10 - d.caffeineDrinksFreq) + (10 - d.alcoholDrinksFreq)) / 3;
@@ -109,9 +117,9 @@ function calcScore(d: HydrationEvalData, weight: number) {
   const score = Math.round(Math.min(10, Math.max(0, raw)));
 
   let riskLevel = 'good';
-  if (d.urineColor >= 6 || d.dehydrationSigns >= 5 || d.dailyLiters < 0.8) riskLevel = 'urgent';
-  else if (d.urineColor >= 5 || d.dehydrationSigns >= 3 || score <= 4) riskLevel = 'risk';
-  else if (d.urineColor >= 4 || d.dehydrationSigns >= 2 || score <= 6) riskLevel = 'mild';
+  if (d.urineColor >= 6 || dehydCount >= 5 || d.dailyLiters < 0.8) riskLevel = 'urgent';
+  else if (d.urineColor >= 5 || dehydCount >= 3 || score <= 4) riskLevel = 'risk';
+  else if (d.urineColor >= 4 || dehydCount >= 2 || score <= 6) riskLevel = 'mild';
 
   return { score, riskLevel, recommendedMlPerKg };
 }
@@ -134,6 +142,7 @@ export default function HydrationEvaluation() {
   const [savedAssessments, setSavedAssessments] = useState<Record<string, unknown>[]>([]);
   const [viewReport, setViewReport] = useState<Record<string, unknown> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
 
   const et = t.hydrationEval;
@@ -169,6 +178,7 @@ export default function HydrationEvaluation() {
   const isSignChecked = (idx: number) => (data.dehydrationSigns & (1 << idx)) !== 0;
 
   const submit = async () => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/hydration-assessment', {
@@ -183,7 +193,7 @@ export default function HydrationEvaluation() {
           setViewReport(result.assessment);
         }
       }
-    } catch { /* silent */ }
+    } catch { setSubmitError('Failed to save assessment. Please try again.'); }
     setIsSubmitting(false);
   };
 
@@ -247,7 +257,7 @@ export default function HydrationEvaluation() {
               </div>
               <div className="p-4 rounded-xl border border-border text-center">
                 <p className="text-xs text-muted-foreground mb-1">{et.dehydrationSignsLabel}</p>
-                <p className={`text-2xl font-bold ${Number(a.dehydrationSigns) === 0 ? 'text-green-500' : Number(a.dehydrationSigns) <= 2 ? 'text-yellow-500' : 'text-red-500'}`}>{String(a.dehydrationSigns)}/7</p>
+                <p className={`text-2xl font-bold ${countBits(Number(a.dehydrationSigns)) === 0 ? 'text-green-500' : countBits(Number(a.dehydrationSigns)) <= 2 ? 'text-yellow-500' : 'text-red-500'}`}>{countBits(Number(a.dehydrationSigns))}/7</p>
               </div>
             </div>
 
@@ -276,7 +286,7 @@ export default function HydrationEvaluation() {
                     <Star className="w-3 h-3 mt-1 flex-shrink-0" /> {et.recDarkUrine}
                   </li>
                 )}
-                {Number(a.dehydrationSigns) >= 3 && (
+                {countBits(Number(a.dehydrationSigns)) >= 3 && (
                   <li className="flex items-start gap-2 text-orange-600 dark:text-orange-400">
                     <Star className="w-3 h-3 mt-1 flex-shrink-0" /> {et.recDehydrationSigns}
                   </li>
@@ -585,7 +595,7 @@ export default function HydrationEvaluation() {
               </div>
             </div>
 
-            {(data.urineColor >= 5 || data.dehydrationSigns >= 3) && (
+            {(data.urineColor >= 5 || countBits(data.dehydrationSigns) >= 3) && (
               <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50">
                 <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4" /> {et.dehydrationWarning}
@@ -597,11 +607,16 @@ export default function HydrationEvaluation() {
               <Button variant="outline" onClick={() => setStep('indicators')} className="gap-2">
                 <ChevronLeft className="w-4 h-4" /> {et.prev}
               </Button>
-              <Button onClick={submit} disabled={isSubmitting}
-                className="gap-2 bg-cyan-500 hover:bg-cyan-600">
-                {isSubmitting ? et.saving : et.generateReport}
-              </Button>
+              {!isAuthenticated ? (
+                <p className="text-sm text-amber-500">Please log in to generate and save reports.</p>
+              ) : (
+                <Button onClick={submit} disabled={isSubmitting}
+                  className="gap-2 bg-cyan-500 hover:bg-cyan-600">
+                  {isSubmitting ? et.saving : et.generateReport}
+                </Button>
+              )}
             </div>
+            {submitError && <p className="text-sm text-red-500 mt-2">{submitError}</p>}
           </CardContent>
         </Card>
       )}

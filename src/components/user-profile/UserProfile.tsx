@@ -191,6 +191,12 @@ export default function UserProfile({ onComplete, embedded = false }: UserProfil
                 <p className="text-xs text-muted-foreground">BMI</p>
                 <p className={`text-lg font-bold ${bmiCategory.color}`}>{bmi || '—'}</p>
                 {bmiCategory.label && <p className={`text-xs ${bmiCategory.color}`}>{bmiCategory.label}</p>}
+                {bmi >= 25 && data.height > 0 && (() => {
+                  const heightM = data.height / 100;
+                  const healthyWeight = 25 * heightM * heightM;
+                  const kgOver = data.weight - healthyWeight;
+                  return kgOver > 0 ? <p className={`text-xs font-semibold ${bmiCategory.color}`}>+{kgOver.toFixed(1)} kg</p> : null;
+                })()}
               </div>
               <div className="p-3 rounded-xl border border-border text-center">
                 <p className="text-xs text-muted-foreground">{pt.smoking}</p>
@@ -395,6 +401,12 @@ export default function UserProfile({ onComplete, embedded = false }: UserProfil
                 <p className="text-xs text-muted-foreground">BMI</p>
                 <p className={`text-2xl font-bold ${bmiCategory.color}`}>{bmi}</p>
                 {bmiCategory.label && <p className={`text-sm font-medium ${bmiCategory.color}`}>{bmiCategory.label}</p>}
+                {bmi >= 25 && data.height > 0 && (() => {
+                  const heightM = data.height / 100;
+                  const healthyWeight = 25 * heightM * heightM;
+                  const kgOver = data.weight - healthyWeight;
+                  return kgOver > 0 ? <p className={`text-xs font-semibold ${bmiCategory.color}`}>+{kgOver.toFixed(1)} kg over healthy range</p> : null;
+                })()}
               </div>
             )}
 

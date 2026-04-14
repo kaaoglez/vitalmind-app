@@ -106,6 +106,7 @@ export default function MentalEvaluation() {
   const [savedAssessments, setSavedAssessments] = useState<Record<string, unknown>[]>([]);
   const [viewReport, setViewReport] = useState<Record<string, unknown> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const et = t.mentalEval;
 
@@ -126,6 +127,7 @@ export default function MentalEvaluation() {
   });
 
   const submit = async () => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       const body: Record<string, number | string> = {};
@@ -150,7 +152,7 @@ export default function MentalEvaluation() {
           setViewReport(result.assessment);
         }
       }
-    } catch { /* silent */ }
+    } catch { setSubmitError('Failed to save assessment. Please try again.'); }
     setIsSubmitting(false);
   };
 
@@ -551,11 +553,16 @@ export default function MentalEvaluation() {
               <Button variant="outline" onClick={() => setStep('indicators')} className="gap-2">
                 <ChevronLeft className="w-4 h-4" /> {et.prev}
               </Button>
-              <Button onClick={submit} disabled={isSubmitting}
-                className="gap-2 bg-wellness-lavender hover:bg-wellness-lavender/90">
-                {isSubmitting ? et.saving : et.generateReport}
-              </Button>
+              {!isAuthenticated ? (
+                <p className="text-sm text-amber-500">Please log in to generate and save reports.</p>
+              ) : (
+                <Button onClick={submit} disabled={isSubmitting}
+                  className="gap-2 bg-wellness-lavender hover:bg-wellness-lavender/90">
+                  {isSubmitting ? et.saving : et.generateReport}
+                </Button>
+              )}
             </div>
+            {submitError && <p className="text-sm text-red-500 mt-2">{submitError}</p>}
           </CardContent>
         </Card>
       )}

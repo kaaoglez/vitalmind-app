@@ -169,6 +169,7 @@ export default function SleepEvaluation() {
   const [savedAssessments, setSavedAssessments] = useState<Record<string, unknown>[]>([]);
   const [viewReport, setViewReport] = useState<Record<string, unknown> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const et = t.sleepEval;
 
@@ -185,6 +186,7 @@ export default function SleepEvaluation() {
     setData(prev => ({ ...prev, [key]: v }));
 
   const submit = async () => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/sleep-assessment', {
@@ -199,7 +201,7 @@ export default function SleepEvaluation() {
           setViewReport(result.assessment);
         }
       }
-    } catch { /* silent */ }
+    } catch { setSubmitError('Failed to save assessment. Please try again.'); }
     setIsSubmitting(false);
   };
 
@@ -686,11 +688,16 @@ export default function SleepEvaluation() {
               <Button variant="outline" onClick={() => setStep('circadian')} className="gap-2">
                 <ChevronLeft className="w-4 h-4" /> {et.prev}
               </Button>
-              <Button onClick={submit} disabled={isSubmitting}
-                className="gap-2 bg-indigo-500 hover:bg-indigo-600">
-                {isSubmitting ? et.saving : et.generateReport}
-              </Button>
+              {!isAuthenticated ? (
+                <p className="text-sm text-amber-500">Please log in to generate and save reports.</p>
+              ) : (
+                <Button onClick={submit} disabled={isSubmitting}
+                  className="gap-2 bg-indigo-500 hover:bg-indigo-600">
+                  {isSubmitting ? et.saving : et.generateReport}
+                </Button>
+              )}
             </div>
+            {submitError && <p className="text-sm text-red-500 mt-2">{submitError}</p>}
           </CardContent>
         </Card>
       )}

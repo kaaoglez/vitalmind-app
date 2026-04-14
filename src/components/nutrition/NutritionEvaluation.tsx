@@ -85,6 +85,7 @@ export default function NutritionEvaluation() {
   const [savedAssessments, setSavedAssessments] = useState<Record<string, unknown>[]>([]);
   const [viewReport, setViewReport] = useState<Record<string, unknown> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
 
   const et = t.nutritionEval;
@@ -113,6 +114,7 @@ export default function NutritionEvaluation() {
   });
 
   const submit = async () => {
+    setSubmitError(null);
     setIsSubmitting(true);
     try {
       const body: Record<string, number> = {};
@@ -125,6 +127,11 @@ export default function NutritionEvaluation() {
       body.proteinPerKg = data.proteinPerKg;
       body.mealRegularity = data.mealRegularity;
       body.hydrationWithMeals = data.hydrationWithMeals;
+      if (profileData) {
+        body.bmi = profileData.bmi;
+        body.height = profileData.height;
+        body.weight = profileData.weight;
+      }
 
       const res = await fetch('/api/nutrition-assessment', {
         method: 'POST',
@@ -138,7 +145,7 @@ export default function NutritionEvaluation() {
           setViewReport(result.assessment);
         }
       }
-    } catch { /* silent */ }
+    } catch { setSubmitError('Failed to save assessment. Please try again.'); }
     setIsSubmitting(false);
   };
 
@@ -230,11 +237,33 @@ export default function NutritionEvaluation() {
               if (bmiVal < 18.5) { bmiLabel = et.bmiUnderweight; bmiColor = 'text-blue-500'; }
               else if (bmiVal >= 25 && bmiVal < 30) { bmiLabel = et.bmiOverweight; bmiColor = 'text-yellow-500'; }
               else if (bmiVal >= 30) { bmiLabel = et.bmiObese; bmiColor = 'text-red-500'; }
+              const heightCm = Number(a.height) || profileData?.height || 0;
+              const weightKg = Number(a.weight) || profileData?.weight || 0;
+              const heightM = heightCm / 100;
+              let kgOver = 0;
+              if (bmiVal >= 25 && heightM > 0 && weightKg > 0) {
+                const healthyWeight = 25 * heightM * heightM;
+                kgOver = weightKg - healthyWeight;
+              }
               return (
                 <div className="p-4 rounded-xl border border-border text-center mb-6">
                   <p className="text-xs text-muted-foreground mb-1">{et.bmiFromProfile}</p>
                   <p className={`text-2xl font-bold ${bmiColor}`}>{bmiVal.toFixed(1)}</p>
                   <p className={`text-xs font-medium mt-1 ${bmiColor}`}>{bmiLabel}</p>
+                  {kgOver > 0 && (
+                    <p className={`text-sm font-semibold mt-1 ${bmiColor}`}>
+                      +{kgOver.toFixed(1)} {et.bmiKgOver}
+                    </p>
+                  )}
+                  {bmiVal < 18.5 && heightM > 0 && weightKg > 0 && (() => {
+                    const minHealthyWeight = 18.5 * heightM * heightM;
+                    const kgBelow = minHealthyWeight - weightKg;
+                    return kgBelow > 0 ? (
+                      <p className="text-sm font-semibold mt-1 text-blue-500">
+                        {kgBelow.toFixed(1)} {et.bmiKgToGoal}
+                      </p>
+                    ) : null;
+                  })()}
                   <div className="max-w-xs mx-auto mt-2 bg-muted rounded-full h-2 overflow-hidden">
                     <div className={`h-full rounded-full ${bmiColor.replace('text-', 'bg-')}`}
                       style={{ width: `${Math.min((bmiVal / 40) * 100, 100)}%` }} />
@@ -332,31 +361,56 @@ export default function NutritionEvaluation() {
       </div>
 
       {/* Profile BMI Card (shown at top of form) */}
-      {step === 'ffq' && profileData && profileData.bmi > 0 && (
-        <Card className="border-wellness-emerald/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-wellness-emerald/10 flex items-center justify-center">
-                <Scale className="w-6 h-6 text-wellness-emerald" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">{et.bmiFromProfile}</p>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className={`text-xl font-bold ${profileData.bmi < 18.5 ? 'text-blue-500' : profileData.bmi < 25 ? 'text-green-500' : profileData.bmi < 30 ? 'text-yellow-500' : 'text-red-500'}`}>
-                    {profileData.bmi.toFixed(1)}
-                  </span>
-                  <span className={`text-xs font-medium ${profileData.bmi < 18.5 ? 'text-blue-500' : profileData.bmi < 25 ? 'text-green-500' : profileData.bmi < 30 ? 'text-yellow-500' : 'text-red-500'}`}>
-                    {profileData.bmi < 18.5 ? et.bmiUnderweight : profileData.bmi < 25 ? et.bmiNormal : profileData.bmi < 30 ? et.bmiOverweight : et.bmiObese}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    ({profileData.weight} kg / {profileData.height} cm)
-                  </span>
+      {step === 'ffq' && profileData && profileData.bmi > 0 && (() => {
+        const bmiColorClass = profileData.bmi < 18.5 ? 'text-blue-500' : profileData.bmi < 25 ? 'text-green-500' : profileData.bmi < 30 ? 'text-yellow-500' : 'text-red-500';
+        const bmiLabel = profileData.bmi < 18.5 ? et.bmiUnderweight : profileData.bmi < 25 ? et.bmiNormal : profileData.bmi < 30 ? et.bmiOverweight : et.bmiObese;
+        const heightM = profileData.height / 100;
+        let kgOver = 0;
+        if (profileData.bmi >= 25 && heightM > 0) {
+          const healthyWeight = 25 * heightM * heightM;
+          kgOver = profileData.weight - healthyWeight;
+        }
+        let kgBelow = 0;
+        if (profileData.bmi < 18.5 && heightM > 0) {
+          const minHealthyWeight = 18.5 * heightM * heightM;
+          kgBelow = minHealthyWeight - profileData.weight;
+        }
+        return (
+          <Card className="border-wellness-emerald/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-wellness-emerald/10 flex items-center justify-center">
+                  <Scale className="w-6 h-6 text-wellness-emerald" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">{et.bmiFromProfile}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className={`text-xl font-bold ${bmiColorClass}`}>
+                      {profileData.bmi.toFixed(1)}
+                    </span>
+                    <span className={`text-xs font-medium ${bmiColorClass}`}>
+                      {bmiLabel}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({profileData.weight} kg / {profileData.height} cm)
+                    </span>
+                  </div>
+                  {kgOver > 0 && (
+                    <p className={`text-sm font-semibold mt-1 ${bmiColorClass}`}>
+                      +{kgOver.toFixed(1)} {et.bmiKgOver}
+                    </p>
+                  )}
+                  {kgBelow > 0 && (
+                    <p className="text-sm font-semibold mt-1 text-blue-500">
+                      {kgBelow.toFixed(1)} {et.bmiKgToGoal}
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* No profile warning */}
       {step === 'ffq' && (!profileData || profileData.bmi === 0) && isAuthenticated && (
@@ -517,7 +571,7 @@ export default function NutritionEvaluation() {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-xl border border-border text-center">
                 <p className="text-xs text-muted-foreground mb-1">{et.positiveFoods}</p>
-                <p className={`text-2xl font-bold ${results.positiveSum >= 12 ? 'text-green-500' : results.positiveSum >= 8 ? 'text-blue-500' : 'text-yellow-500'}`}>{results.positiveSum}/20</p>
+                <p className={`text-2xl font-bold ${results.positiveSum >= 12 ? 'text-green-500' : results.positiveSum >= 8 ? 'text-blue-500' : results.positiveSum >= 4 ? 'text-yellow-500' : 'text-red-500'}`}>{results.positiveSum}/20</p>
               </div>
               <div className="p-4 rounded-xl border border-border text-center">
                 <p className="text-xs text-muted-foreground mb-1">{et.inverseFoods}</p>
@@ -537,11 +591,16 @@ export default function NutritionEvaluation() {
               <Button variant="outline" onClick={() => setStep('indicators')} className="gap-2">
                 <ChevronLeft className="w-4 h-4" /> {et.prev}
               </Button>
-              <Button onClick={submit} disabled={isSubmitting}
-                className="gap-2 bg-wellness-emerald hover:bg-wellness-emerald/90">
-                {isSubmitting ? et.saving : et.generateReport}
-              </Button>
+              {!isAuthenticated ? (
+                <p className="text-sm text-amber-500">Please log in to generate and save reports.</p>
+              ) : (
+                <Button onClick={submit} disabled={isSubmitting}
+                  className="gap-2 bg-wellness-emerald hover:bg-wellness-emerald/90">
+                  {isSubmitting ? et.saving : et.generateReport}
+                </Button>
+              )}
             </div>
+            {submitError && <p className="text-sm text-red-500 mt-2">{submitError}</p>}
           </CardContent>
         </Card>
       )}
