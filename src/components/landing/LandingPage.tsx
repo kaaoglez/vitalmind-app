@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useAuthStore } from '@/lib/auth/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Heart, Brain, Apple, Dumbbell, Droplets, Moon, Target, BarChart3,
   Globe, Menu, X, ChevronRight, Star, Shield, Zap, Users, CheckCircle2,
-  Sparkles, ArrowRight, Play, Lock, Smartphone, Monitor, Phone, AlertTriangle, LogIn
+  Sparkles, ArrowRight, Play, Lock, Smartphone, Monitor, Phone, AlertTriangle, LogIn,
+  FlaskConical, MessageCircleQuestion, Activity, ClipboardCheck, Lightbulb, Sun
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,6 +36,18 @@ export default function LandingPage() {
   const [langOpen, setLangOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showCrisisModal, setShowCrisisModal] = useState(false);
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+
+  // Rotating quotes for the dynamic quotes section
+  const quoteCategories = ['quotes', 'tips', 'affirmations'] as const;
+  const [activeQuoteCategory, setActiveQuoteCategory] = useState<typeof quoteCategories[number]>('quotes');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentQuoteIndex(prev => prev + 1);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -323,15 +336,16 @@ export default function LandingPage() {
             </motion.p>
           </motion.div>
 
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {t.landing.features.items.map((feature, i) => {
-              const icons = [Brain, Apple, Dumbbell, Droplets, Moon, Target, BarChart3, Globe];
+              const icons = [Brain, Apple, Dumbbell, Droplets, Moon, Activity, ClipboardCheck, Shield, Globe];
               const colors = [
                 'from-wellness-lavender/20 to-wellness-purple/20 text-wellness-lavender',
                 'from-emerald-500/20 to-green-500/20 text-emerald-500',
                 'from-primary/20 to-wellness-teal/20 text-primary',
                 'from-cyan-500/20 to-blue-500/20 text-cyan-500',
                 'from-indigo-500/20 to-purple-500/20 text-indigo-500',
+                'from-red-500/20 to-rose-500/20 text-red-500',
                 'from-wellness-amber/20 to-orange-500/20 text-wellness-amber',
                 'from-wellness-emerald/20 to-teal-500/20 text-wellness-emerald',
                 'from-rose-500/20 to-pink-500/20 text-rose-500',
@@ -393,6 +407,129 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===== SCIENTIFIC ASSESSMENTS ===== */}
+      <section className="py-20 sm:py-28 bg-gradient-to-br from-primary/5 via-wellness-teal/5 to-wellness-emerald/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-16">
+            <motion.div variants={fadeInUp} className="flex items-center justify-center gap-2 mb-4">
+              <FlaskConical className="w-6 h-6 text-primary" />
+              <Badge variant="secondary" className="text-sm">{t.landing.scientificAssessments.title}</Badge>
+            </motion.div>
+            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-foreground">
+              {t.landing.scientificAssessments.title}
+            </motion.h2>
+            <motion.p variants={fadeInUp} className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              {t.landing.scientificAssessments.subtitle}
+            </motion.p>
+          </motion.div>
+
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(t.landing.scientificAssessments.items as Array<{name: string; fullName: string; desc: string}>).map((item, i) => {
+              const assessmentIcons = [Brain, Heart, Activity, Moon, Apple, Shield];
+              const assessmentColors = [
+                'from-wellness-lavender/20 to-wellness-purple/20 text-wellness-lavender',
+                'from-rose-500/20 to-red-500/20 text-rose-500',
+                'from-primary/20 to-wellness-teal/20 text-primary',
+                'from-indigo-500/20 to-purple-500/20 text-indigo-500',
+                'from-emerald-500/20 to-green-500/20 text-emerald-500',
+                'from-wellness-amber/20 to-orange-500/20 text-wellness-amber',
+              ];
+              const AIcon = assessmentIcons[i] || FlaskConical;
+              return (
+                <motion.div key={i} variants={fadeInUp}>
+                  <Card className="h-full hover:shadow-lg transition-all duration-300 group">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${assessmentColors[i]} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                          <AIcon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-foreground text-lg">{item.name}</h4>
+                          <p className="text-xs text-muted-foreground">{item.fullName}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ===== DYNAMIC QUOTES ===== */}
+      <section className="py-20 sm:py-28">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
+            <motion.div variants={fadeInUp} className="flex items-center justify-center gap-2 mb-4">
+              <MessageCircleQuestion className="w-6 h-6 text-wellness-amber" />
+              <Badge variant="secondary" className="text-sm">{t.landing.dynamicQuotes.title}</Badge>
+            </motion.div>
+            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-foreground">
+              {t.landing.dynamicQuotes.title}
+            </motion.h2>
+            <motion.p variants={fadeInUp} className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              {t.landing.dynamicQuotes.subtitle}
+            </motion.p>
+          </motion.div>
+
+          {/* Category tabs */}
+          <motion.div variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex items-center justify-center gap-3 mb-10">
+            {quoteCategories.map(cat => {
+              const catIcons = { quotes: MessageCircleQuestion, tips: Lightbulb, affirmations: Sun };
+              const CatIcon = catIcons[cat];
+              return (
+                <button
+                  key={cat}
+                  onClick={() => { setActiveQuoteCategory(cat); setCurrentQuoteIndex(0); }}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    activeQuoteCategory === cat
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <CatIcon className="w-4 h-4" />
+                  {t.landing.dynamicQuotes.categories[cat]}
+                </button>
+              );
+            })}
+          </motion.div>
+
+          {/* Rotating quote card */}
+          <motion.div variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <Card className="max-w-2xl mx-auto overflow-hidden">
+              <CardContent className="p-8 sm:p-10 text-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentQuoteIndex}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div className="flex justify-center mb-4">
+                      {activeQuoteCategory === 'quotes' && <MessageCircleQuestion className="w-8 h-8 text-primary" />}
+                      {activeQuoteCategory === 'tips' && <Lightbulb className="w-8 h-8 text-wellness-amber" />}
+                      {activeQuoteCategory === 'affirmations' && <Sun className="w-8 h-8 text-wellness-lavender" />}
+                    </div>
+                    <p className="text-lg sm:text-xl font-medium text-foreground leading-relaxed">
+                      {activeQuoteCategory === 'quotes' && (t.dashboard.quotes as string[])[currentQuoteIndex % (t.dashboard.quotes as string[]).length]}
+                      {activeQuoteCategory === 'tips' && (t.dashboard.tips as string[])[currentQuoteIndex % (t.dashboard.tips as string[]).length]}
+                      {activeQuoteCategory === 'affirmations' && (t.mentalHealth.emotional.dailyAffirmations as string[])[currentQuoteIndex % (t.mentalHealth.emotional.dailyAffirmations as string[]).length]}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.p variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mt-6 text-center text-sm text-muted-foreground">
+            {t.landing.dynamicQuotes.description}
+          </motion.p>
+        </div>
+      </section>
+
       {/* ===== HOW IT WORKS ===== */}
       <section id="how-it-works" className="py-20 sm:py-28">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -432,7 +569,7 @@ export default function LandingPage() {
             </motion.h2>
           </motion.div>
 
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {t.landing.testimonials.items.map((item, i) => (
               <motion.div key={i} variants={fadeInUp}>
                 <Card className="h-full">
