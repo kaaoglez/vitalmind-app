@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useAuthStore } from '@/lib/auth/authStore';
+import { useDbHealth } from '@/hooks/useDbHealth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   FileText, ChevronLeft, CheckCircle2, AlertTriangle, Activity,
   ShieldAlert, Filter, TrendingUp, Calendar, Printer, ClipboardList,
+  Database, RefreshCw,
 } from 'lucide-react';
 
 interface AssessmentEntry {
@@ -63,6 +65,7 @@ export default function Reports() {
   const [total, setTotal] = useState(0);
 
   const rt = t.reports;
+  const dbHealth = useDbHealth();
 
   const loadAssessments = React.useCallback(() => {
     if (!isAuthenticated) return;
@@ -93,6 +96,46 @@ export default function Reports() {
     } catch {
       return dateStr;
     }
+  };
+
+  // ─── DATABASE DISCONNECTED BANNER ────────────────────
+  const DbBanner = () => {
+    if (dbHealth.checked && !dbHealth.ok) {
+      return (
+        <Card className="border-red-500/30 bg-red-50 dark:bg-red-950/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Database className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-red-600 dark:text-red-400">Database Not Connected</h3>
+                <p className="text-xs text-red-500/80 dark:text-red-400/80 mt-1">
+                  {dbHealth.error || 'The database is unreachable. Reports cannot be saved or loaded.'}
+                </p>
+                <div className="mt-2 p-2 rounded bg-red-100 dark:bg-red-900/30 text-xs text-red-600 dark:text-red-300 space-y-1">
+                  <p className="font-medium">To fix this, run in your terminal:</p>
+                  <code className="block bg-black/10 dark:bg-white/10 px-2 py-1 rounded font-mono">npx prisma generate</code>
+                  <code className="block bg-black/10 dark:bg-white/10 px-2 py-1 rounded font-mono">npx prisma db push</code>
+                  <p className="mt-1">And make sure <code>.env</code> has <code>NEON_DATABASE_URL</code> set.</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={dbHealth.recheck}
+                  className="mt-2 gap-1.5 text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20">
+                  <RefreshCw className="w-3 h-3" /> Retry Connection
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    if (dbHealth.checked && dbHealth.ok) {
+      return (
+        <div className="flex items-center gap-2 text-xs text-green-500">
+          <Database className="w-3.5 h-3.5" />
+          <span>DB Connected</span>
+        </div>
+      );
+    }
+    return null;
   };
 
   // ─── NOT AUTHENTICATED ───────────────────────────────
@@ -297,6 +340,9 @@ export default function Reports() {
   // ─── MAIN REPORTS LIST ───────────────────────────────
   return (
     <div className="space-y-6">
+      {/* DB Status Banner */}
+      <DbBanner />
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">

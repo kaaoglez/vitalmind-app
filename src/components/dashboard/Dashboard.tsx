@@ -3,11 +3,13 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useAuthStore } from '@/lib/auth/authStore';
+import { useDbHealth } from '@/hooks/useDbHealth';
 import { getWellnessData, getTodayStr, getStorage, type WellnessData } from '@/lib/storage';
 import type { Section } from '../WellnessApp';
 import {
   Brain, Droplets, Moon, Activity, Smile, Droplet, Dumbbell,
   Sparkles, ChevronRight, TrendingUp, Trophy, Zap, Flame, Apple,
+  Database, AlertTriangle,
 } from 'lucide-react';
 
 interface ActivityLogEntry {
@@ -66,6 +68,7 @@ function getBarColor(score: number | null): string {
 export default function Dashboard({ onNavigate }: DashboardProps) {
   const { t } = useLanguage();
   const { isAuthenticated } = useAuthStore();
+  const dbHealth = useDbHealth(60000);
   const [data, setData] = useState<WellnessData>(() => getWellnessData());
   const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>(() => getStorage<ActivityLogEntry[]>('profile-activity-log', []));
   const [profileScore, setProfileScore] = useState<{ totalPoints: number; todayPoints: number; level: string; levelName: string } | null>(null);
@@ -152,6 +155,20 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
   return (
     <div className="space-y-6">
+      {/* Database Warning Banner */}
+      {dbHealth.checked && !dbHealth.ok && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 flex items-start gap-3">
+          <Database className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-red-600 dark:text-red-400">Database Not Connected</p>
+            <p className="text-xs text-red-500/80 dark:text-red-400/80 mt-1">
+              {dbHealth.error || 'Reports and assessments cannot be saved. Run: npx prisma generate && npx prisma db push'}
+            </p>
+          </div>
+          <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 ml-auto" />
+        </div>
+      )}
+
       {/* Welcome */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

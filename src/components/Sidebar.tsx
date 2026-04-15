@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useDbHealth } from '@/hooks/useDbHealth';
 import type { Section } from './WellnessApp';
 import {
   Home,
@@ -24,6 +25,8 @@ import {
   Activity,
   Clipboard,
   ClipboardList,
+  Database,
+  AlertCircle,
 } from 'lucide-react';
 
 const navItems: { id: Section; icon: React.ElementType; labelKey: string }[] = [
@@ -58,6 +61,7 @@ interface SidebarProps {
 
 export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle }: SidebarProps) {
   const { t } = useLanguage();
+  const dbHealth = useDbHealth(60000);
 
   return (
     <>
@@ -171,6 +175,18 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle }:
             );
           })}
         </nav>
+
+        {/* DB Status indicator */}
+        {isOpen && dbHealth.checked && !dbHealth.ok && (
+          <div className="mx-3 mb-2 p-2 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50">
+            <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+              <Database className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate font-medium">DB Offline</span>
+              <AlertCircle className="w-3 h-3 ml-auto flex-shrink-0" />
+            </div>
+            <p className="text-[10px] text-red-500/70 dark:text-red-400/70 mt-1 truncate">Run: npx prisma generate && npx prisma db push</p>
+          </div>
+        )}
 
         {/* Collapse button for desktop */}
         <div className="hidden lg:block p-3 border-t border-border">
