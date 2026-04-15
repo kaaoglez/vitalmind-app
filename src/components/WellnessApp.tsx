@@ -100,7 +100,7 @@ export default function WellnessApp() {
           onToggleDarkMode={toggleDarkMode}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
-        <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-8 pb-20 lg:pb-8">
           <div className="max-w-7xl mx-auto section-enter">
             {renderSection()}
           </div>

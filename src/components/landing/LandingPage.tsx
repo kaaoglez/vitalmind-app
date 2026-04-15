@@ -123,21 +123,46 @@ export default function LandingPage() {
               className="md:hidden bg-card border-b border-border"
             >
               <div className="px-4 py-4 space-y-3">
-                <a href="#features" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground">{t.landing.nav.features}</a>
-                <a href="#pricing" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground">{t.landing.nav.pricing}</a>
-                <a href="#faq" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground">{t.landing.nav.faq}</a>
+                {/* Language Selector for Mobile */}
+                <div className="flex items-center gap-2 pb-3 border-b border-border">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex flex-wrap gap-2">
+                    {langs.map(lang => (
+                      <button
+                        key={lang.code}
+                        onClick={() => { setLanguage(lang.code); updateLanguage(lang.code); }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          language === lang.code
+                            ? 'bg-primary/10 text-primary border border-primary/30'
+                            : 'text-muted-foreground hover:bg-accent/10 hover:text-foreground border border-transparent'
+                        }`}
+                      >
+                        <span>{lang.flag}</span>
+                        <span>{lang.code.toUpperCase()}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Nav Links */}
+                <a href="#features" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground hover:text-foreground py-1">{t.landing.nav.features}</a>
+                <a href="#how-it-works" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground hover:text-foreground py-1">{t.landing.nav.howItWorks}</a>
+                <a href="#pricing" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground hover:text-foreground py-1">{t.landing.nav.pricing}</a>
+                <a href="#faq" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground hover:text-foreground py-1">{t.landing.nav.faq}</a>
                 <button
                   onClick={() => { setShowCrisisModal(true); setMobileMenu(false); }}
-                  className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-medium"
+                  className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-medium py-1"
                 >
                   <Phone className="w-3.5 h-3.5" />
                   {t.landing.nav.crisisNumbers}
                 </button>
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => { setShowAuthModal('login'); setMobileMenu(false); }}>
+
+                {/* Auth Buttons - prominent on mobile */}
+                <div className="flex gap-3 pt-3 border-t border-border">
+                  <Button variant="outline" className="flex-1 h-10" onClick={() => { setShowAuthModal('login'); setMobileMenu(false); }}>
                     {t.landing.nav.login}
                   </Button>
-                  <Button size="sm" className="flex-1" onClick={() => { setShowAuthModal('register'); setMobileMenu(false); }}>
+                  <Button className="flex-1 h-10" onClick={() => { setShowAuthModal('register'); setMobileMenu(false); }}>
                     {t.landing.nav.getStarted}
                   </Button>
                 </div>

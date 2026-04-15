@@ -3,7 +3,7 @@
 import React from 'react';
 import { useLanguage, Language } from '@/lib/i18n/LanguageContext';
 import { useAuthStore } from '@/lib/auth/authStore';
-import { Moon, Sun, Menu, Globe, LogOut, User } from 'lucide-react';
+import { Moon, Sun, Menu, Globe, LogOut, User, LogIn } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -100,8 +100,8 @@ export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: 
           {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
 
-        {/* User Profile Dropdown */}
-        {user && (
+        {/* User Profile Dropdown or Login Button */}
+        {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-accent/10 transition-colors ml-1">
@@ -135,6 +135,14 @@ export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: 
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        ) : (
+          <button
+            onClick={() => useAuthStore.getState().setShowAuthModal('login')}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <LogIn className="w-4 h-4" />
+            <span className="sm:inline">{t.landing.nav.login}</span>
+          </button>
         )}
       </div>
     </header>

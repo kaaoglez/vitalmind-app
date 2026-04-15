@@ -201,27 +201,94 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle }:
         </div>
       </aside>
 
-      {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border lg:hidden">
+      {/* Mobile bottom nav — key sections + menu toggle */}
+      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border lg:hidden safe-area-bottom">
         <div className="flex items-center justify-around h-16 px-1">
-          {navItems.slice(0, 5).map((item) => {
+          {/* Dashboard (Home) */}
+          {(() => {
+            const item = navItems[0];
             const Icon = item.icon;
             const isActive = activeSection === item.id;
             return (
               <button
-                key={item.id}
                 onClick={() => onNavigate(item.id)}
-                className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-lg transition-colors ${
+                className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-lg transition-colors min-w-0 flex-1 ${
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="text-[10px] font-medium truncate max-w-[48px]">
+                <span className="text-[10px] font-medium truncate">
                   {t.nav[item.labelKey as keyof typeof t.nav]}
                 </span>
               </button>
             );
-          })}
+          })()}
+
+          {/* Reports */}
+          {(() => {
+            const item = navItems.find(n => n.id === 'reports')!;
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            return (
+              <button
+                onClick={() => onNavigate(item.id)}
+                className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-lg transition-colors min-w-0 flex-1 ${
+                  isActive ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-[10px] font-medium truncate">
+                  {t.nav[item.labelKey as keyof typeof t.nav]}
+                </span>
+              </button>
+            );
+          })()}
+
+          {/* Menu toggle (hamburger) — opens sidebar for all sections */}
+          <button
+            onClick={onToggle}
+            className="flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-lg transition-colors min-w-0 flex-1 text-muted-foreground hover:text-foreground"
+          >
+            <Menu className="w-5 h-5" />
+            <span className="text-[10px] font-medium truncate">Menu</span>
+          </button>
+
+          {/* User Profile */}
+          {(() => {
+            const item = bottomItems.find(n => n.id === 'profile')!;
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            const label = t.profile?.title || 'Profile';
+            return (
+              <button
+                onClick={() => onNavigate(item.id)}
+                className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-lg transition-colors min-w-0 flex-1 ${
+                  isActive ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-[10px] font-medium truncate">{label}</span>
+              </button>
+            );
+          })()}
+
+          {/* Crisis Numbers */}
+          {(() => {
+            const item = bottomItems.find(n => n.id === 'crisisNumbers')!;
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            return (
+              <button
+                onClick={() => onNavigate(item.id)}
+                className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-lg transition-colors min-w-0 flex-1 ${
+                  isActive ? 'text-red-500' : 'text-red-400'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-[10px] font-medium truncate">{t.crisisNumbers?.title || 'Crisis'}</span>
+              </button>
+            );
+          })()}
         </div>
       </nav>
     </>
