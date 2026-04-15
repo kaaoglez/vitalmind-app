@@ -640,6 +640,21 @@ model SocialAssessment {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// --- Motivational Quotes, Tips & Affirmations ---
+
+model MotivationalQuote {
+  id        String   @id @default(cuid())
+  text      String                    // The quote/tip/affirmation text
+  author    String?                   // Optional author (for quotes)
+  category  String   @default("motivational") // motivational | tip | affirmation
+  language  String   @default("en")   // en | es | pt | fr | zh
+  active    Boolean  @default(true)   // Can be toggled on/off
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, language, active])
+}
+
 // --- Prevention and Medical Control Assessment (Area 9) ---
 // Based on WHO screening guidelines + USPSTF recommendations
 

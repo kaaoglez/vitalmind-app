@@ -122,6 +122,24 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
     return t.dashboard.greeting.evening;
   }, [t]);
 
+  // Dynamic quotes/tips from DB, fallback to hardcoded translations
+  const [dbTip, setDbTip] = useState<string | null>(null);
+  const [dbQuote, setDbQuote] = useState<{ text: string; author: string | null } | null>(null);
+
+  useEffect(() => {
+    const lang = typeof window !== 'undefined' ? localStorage.getItem('zenvida-language') || 'es' : 'es';
+    // Fetch daily tip
+    fetch(`/api/quotes?category=tip&language=${lang}&random=true&limit=1`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.quotes?.[0]?.text) setDbTip(d.quotes[0].text); })
+      .catch(() => {});
+    // Fetch motivational quote
+    fetch(`/api/quotes?category=motivational&language=${lang}&random=true&limit=1`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.quotes?.[0]) setDbQuote({ text: d.quotes[0].text, author: d.quotes[0].author }); })
+      .catch(() => {});
+  }, [t]);
+
   const tipIndex = useMemo(() => {
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
     return dayOfYear % t.dashboard.tips.length;
@@ -232,14 +250,17 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
             <Sparkles className="w-5 h-5 text-wellness-amber" />
             <h3 className="font-semibold text-foreground">{t.dashboard.dailyTip}</h3>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">{t.dashboard.tips[tipIndex]}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{dbTip || t.dashboard.tips[tipIndex]}</p>
         </div>
         <div className="bg-gradient-to-br from-wellness-lavender/10 to-wellness-purple/10 rounded-2xl p-5 border border-wellness-lavender/20">
           <div className="flex items-center gap-2 mb-3">
             <Brain className="w-5 h-5 text-wellness-lavender" />
             <h3 className="font-semibold text-foreground">{t.dashboard.motivationalQuote}</h3>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed italic">&ldquo;{t.dashboard.quotes[quoteIndex]}&rdquo;</p>
+          <p className="text-sm text-muted-foreground leading-relaxed italic">
+            &ldquo;{dbQuote?.text || t.dashboard.quotes[quoteIndex]}&rdquo;
+            {dbQuote?.author && <span className="block text-xs mt-1 not-italic text-muted-foreground/70">— {dbQuote.author}</span>}
+          </p>
         </div>
       </div>
 

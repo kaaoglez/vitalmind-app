@@ -456,6 +456,17 @@ function EmotionalSection() {
   const [data, setData] = useState<WellnessData>(() => getWellnessData());
   const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
 
+  // Dynamic affirmation from DB, fallback to hardcoded translations
+  const [dbAffirmation, setDbAffirmation] = useState<string | null>(null);
+
+  useEffect(() => {
+    const lang = typeof window !== 'undefined' ? localStorage.getItem('zenvida-language') || 'es' : 'es';
+    fetch(`/api/quotes?category=affirmation&language=${lang}&random=true&limit=1`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.quotes?.[0]?.text) setDbAffirmation(d.quotes[0].text); })
+      .catch(() => {});
+  }, [t]);
+
   const todaysAffirmation = useMemo(() => {
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
     return dayOfYear % t.mentalHealth.emotional.dailyAffirmations.length;
@@ -560,7 +571,7 @@ function EmotionalSection() {
             <Sparkles className="w-8 h-8 text-wellness-lavender mx-auto mb-4" />
             <h3 className="font-semibold text-foreground mb-3">{t.mentalHealth.emotional.affirmations}</h3>
             <p className="text-lg text-foreground font-medium italic leading-relaxed">
-              &ldquo;{t.mentalHealth.emotional.dailyAffirmations[todaysAffirmation]}&rdquo;
+              &ldquo;{dbAffirmation || t.mentalHealth.emotional.dailyAffirmations[todaysAffirmation]}&rdquo;
             </p>
           </div>
         </CardContent>
