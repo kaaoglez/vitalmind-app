@@ -13,12 +13,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const languages: { code: Language; label: string; flag: string }[] = [
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'pt', label: 'Português', flag: '🇧🇷' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
+const langs: { code: Language; flag: string; label: string }[] = [
+  { code: 'es', flag: '🇪🇸', label: 'Español' },
+  { code: 'en', flag: '🇺🇸', label: 'English' },
+  { code: 'pt', flag: '🇧🇷', label: 'Português' },
+  { code: 'fr', flag: '🇫🇷', label: 'Français' },
+  { code: 'zh', flag: '🇨🇳', label: '中文' },
 ];
 
 interface HeaderProps {
@@ -33,7 +33,7 @@ export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar, on
   const { user, logout, updateLanguage } = useAuthStore();
   const [langOpen, setLangOpen] = React.useState(false);
 
-  const currentLang = languages.find(l => l.code === language) || languages[0];
+  const currentLang = langs.find(l => l.code === language) || langs[0];
 
   const userInitials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -51,22 +51,22 @@ export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar, on
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Language Switcher — click-to-open, works on all screen sizes */}
+        {/* Language Switcher — same style as Landing Page */}
         <div className="relative">
           <button
             onClick={() => setLangOpen(!langOpen)}
-            className="flex items-center gap-1 px-2 py-2 rounded-lg hover:bg-accent/10 text-muted-foreground transition-colors"
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors"
           >
             <Globe className="w-4 h-4" />
-            <span className="hidden sm:inline text-sm">{currentLang.flag} {currentLang.code.toUpperCase()}</span>
-            <span className="sm:hidden text-sm">{currentLang.flag}</span>
+            <span className="hidden sm:inline">{currentLang.flag} {language.toUpperCase()}</span>
+            <span className="sm:hidden">{currentLang.flag}</span>
           </button>
 
           {langOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
-              <div className="absolute right-0 top-full mt-1 w-44 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
-                {languages.map((lang) => (
+              <div className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                {langs.map(lang => (
                   <button
                     key={lang.code}
                     onClick={() => {
@@ -74,7 +74,7 @@ export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar, on
                       updateLanguage(lang.code);
                       setLangOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm transition-colors ${
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
                       language === lang.code
                         ? 'bg-primary/10 text-primary font-medium'
                         : 'text-foreground hover:bg-accent/10'
