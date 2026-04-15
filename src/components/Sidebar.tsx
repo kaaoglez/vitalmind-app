@@ -27,6 +27,7 @@ import {
   ClipboardList,
   Database,
   AlertCircle,
+  Settings,
 } from 'lucide-react';
 
 const navItems: { id: Section; icon: React.ElementType; labelKey: string }[] = [
@@ -48,6 +49,7 @@ const navItems: { id: Section; icon: React.ElementType; labelKey: string }[] = [
 ];
 
 const bottomItems: { id: Section; icon: React.ElementType; labelKey: string }[] = [
+  { id: 'accountSettings', icon: Settings, labelKey: 'accountSettings' },
   { id: 'crisisNumbers', icon: Phone, labelKey: 'crisisNumbers' },
   { id: 'profile', icon: UserCircle, labelKey: 'profile' },
 ];
@@ -138,12 +140,15 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle }:
           {/* Separator */}
           <div className="my-2 border-t border-border" />
 
-          {/* Bottom items: Crisis + Profile */}
+          {/* Bottom items: Account Settings + Crisis + Profile */}
           {bottomItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
-            const labelKey = item.labelKey as 'crisisNumbers' | 'profile';
-            const label = t[labelKey]?.title || labelKey;
+            const isDanger = item.id === 'crisisNumbers';
+            const isSettings = item.id === 'accountSettings';
+            const label = isSettings
+              ? (t.accountSettings?.title || 'Account Settings')
+              : (t[item.labelKey as 'crisisNumbers' | 'profile']?.title || item.labelKey);
 
             return (
               <button
@@ -156,20 +161,20 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle }:
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
                   transition-all duration-200 text-sm font-medium
                   ${isActive
-                    ? item.id === 'crisisNumbers'
+                    ? isDanger
                       ? 'bg-red-500/10 text-red-500 shadow-sm'
                       : 'bg-primary/10 text-primary shadow-sm'
-                    : item.id === 'crisisNumbers'
+                    : isDanger
                       ? 'text-red-400 hover:bg-red-500/10 hover:text-red-500'
                       : 'text-muted-foreground hover:bg-accent/10 hover:text-foreground'
                   }
                 `}
                 title={!isOpen ? label : undefined}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? (item.id === 'crisisNumbers' ? 'text-red-500' : 'text-primary') : ''}`} />
+                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? (isDanger ? 'text-red-500' : 'text-primary') : ''}`} />
                 {isOpen && <span className="truncate">{label}</span>}
                 {isActive && isOpen && (
-                  <div className={`ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0 ${item.id === 'crisisNumbers' ? 'bg-red-500' : 'bg-primary'}`} />
+                  <div className={`ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0 ${isDanger ? 'bg-red-500' : 'bg-primary'}`} />
                 )}
               </button>
             );
@@ -253,12 +258,12 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle }:
             <span className="text-[10px] font-medium truncate">Menu</span>
           </button>
 
-          {/* User Profile */}
+          {/* Account Settings */}
           {(() => {
-            const item = bottomItems.find(n => n.id === 'profile')!;
+            const item = bottomItems.find(n => n.id === 'accountSettings')!;
             const Icon = item.icon;
             const isActive = activeSection === item.id;
-            const label = t.profile?.title || 'Profile';
+            const label = t.accountSettings?.title || 'Settings';
             return (
               <button
                 onClick={() => onNavigate(item.id)}

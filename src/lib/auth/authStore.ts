@@ -7,6 +7,7 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
+  phone?: string;
   language: string;
   darkMode: boolean;
   plan: string;

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Heart, Brain, Apple, Dumbbell, Droplets, Moon, Target, BarChart3,
   Globe, Menu, X, ChevronRight, Star, Shield, Zap, Users, CheckCircle2,
-  Sparkles, ArrowRight, Play, Lock, Smartphone, Monitor, Phone, AlertTriangle
+  Sparkles, ArrowRight, Play, Lock, Smartphone, Monitor, Phone, AlertTriangle, LogIn
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +32,7 @@ export default function LandingPage() {
   const { t, language, setLanguage } = useLanguage();
   const { setShowAuthModal, updateLanguage } = useAuthStore();
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showCrisisModal, setShowCrisisModal] = useState(false);
 
@@ -78,94 +79,89 @@ export default function LandingPage() {
               </button>
             </div>
 
-            <div className="hidden md:flex items-center gap-3">
-              <div className="relative group">
-                <button className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm text-muted-foreground hover:text-foreground">
+            {/* Right section: Language + Auth + Hamburger — always visible */}
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              {/* Language Selector — always visible, click-to-open */}
+              <div className="relative">
+                <button
+                  onClick={() => { setLangOpen(!langOpen); setMobileMenu(false); }}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors"
+                >
                   <Globe className="w-4 h-4" />
-                  {langs.find(l => l.code === language)?.flag}
+                  <span className="hidden sm:inline">{langs.find(l => l.code === language)?.flag} {language.toUpperCase()}</span>
+                  <span className="sm:hidden">{langs.find(l => l.code === language)?.flag}</span>
                 </button>
-                <div className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                  {langs.map(lang => (
-                    <button
-                      key={lang.code}
-                      onClick={() => { setLanguage(lang.code); updateLanguage(lang.code); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors first:rounded-t-xl last:rounded-b-xl ${
-                        language === lang.code ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-accent/10'
-                      }`}
-                    >
-                      <span>{lang.flag}</span>
-                      <span>{lang.label}</span>
-                    </button>
-                  ))}
-                </div>
+
+                {/* Language dropdown — works on both mobile and desktop */}
+                {langOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                      {langs.map(lang => (
+                        <button
+                          key={lang.code}
+                          onClick={() => { setLanguage(lang.code); updateLanguage(lang.code); setLangOpen(false); }}
+                          className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors ${
+                            language === lang.code ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-accent/10'
+                          }`}
+                        >
+                          <span>{lang.flag}</span>
+                          <span>{lang.label}</span>
+                          {language === lang.code && (
+                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setShowAuthModal('login')}>
+
+              {/* Auth buttons — always visible, compact on mobile */}
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => setShowAuthModal('login')}>
                 {t.landing.nav.login}
               </Button>
+              <button
+                className="sm:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors"
+                onClick={() => setShowAuthModal('login')}
+                title={t.landing.nav.login}
+              >
+                <LogIn className="w-4 h-4" />
+              </button>
               <Button size="sm" onClick={() => setShowAuthModal('register')}>
-                {t.landing.nav.getStarted}
+                <span className="sm:hidden text-xs">{t.landing.nav.getStarted}</span>
+                <span className="hidden sm:inline">{t.landing.nav.getStarted}</span>
               </Button>
-            </div>
 
-            <button className="md:hidden p-2" onClick={() => setMobileMenu(!mobileMenu)}>
-              {mobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+              {/* Hamburger — mobile only, for nav links */}
+              <button className="md:hidden p-2 rounded-lg hover:bg-accent/10 transition-colors" onClick={() => { setMobileMenu(!mobileMenu); setLangOpen(false); }}>
+                {mobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile menu — navigation links only (language & auth are in the navbar) */}
         <AnimatePresence>
           {mobileMenu && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden bg-card border-b border-border"
+              className="md:hidden bg-card/95 backdrop-blur-xl border-b border-border"
             >
-              <div className="px-4 py-4 space-y-3">
-                {/* Language Selector for Mobile */}
-                <div className="flex items-center gap-2 pb-3 border-b border-border">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  <div className="flex flex-wrap gap-2">
-                    {langs.map(lang => (
-                      <button
-                        key={lang.code}
-                        onClick={() => { setLanguage(lang.code); updateLanguage(lang.code); }}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          language === lang.code
-                            ? 'bg-primary/10 text-primary border border-primary/30'
-                            : 'text-muted-foreground hover:bg-accent/10 hover:text-foreground border border-transparent'
-                        }`}
-                      >
-                        <span>{lang.flag}</span>
-                        <span>{lang.code.toUpperCase()}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Nav Links */}
-                <a href="#features" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground hover:text-foreground py-1">{t.landing.nav.features}</a>
-                <a href="#how-it-works" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground hover:text-foreground py-1">{t.landing.nav.howItWorks}</a>
-                <a href="#pricing" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground hover:text-foreground py-1">{t.landing.nav.pricing}</a>
-                <a href="#faq" onClick={() => setMobileMenu(false)} className="block text-sm text-muted-foreground hover:text-foreground py-1">{t.landing.nav.faq}</a>
+              <div className="px-4 py-3 space-y-1">
+                <a href="#features" onClick={() => setMobileMenu(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors">{t.landing.nav.features}</a>
+                <a href="#how-it-works" onClick={() => setMobileMenu(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors">{t.landing.nav.howItWorks}</a>
+                <a href="#pricing" onClick={() => setMobileMenu(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors">{t.landing.nav.pricing}</a>
+                <a href="#faq" onClick={() => setMobileMenu(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors">{t.landing.nav.faq}</a>
                 <button
                   onClick={() => { setShowCrisisModal(true); setMobileMenu(false); }}
-                  className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-medium py-1"
+                  className="flex items-center gap-1.5 w-full px-3 py-2.5 rounded-lg text-sm text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-medium hover:bg-red-500/5 transition-colors"
                 >
                   <Phone className="w-3.5 h-3.5" />
                   {t.landing.nav.crisisNumbers}
                 </button>
-
-                {/* Auth Buttons - prominent on mobile */}
-                <div className="flex gap-3 pt-3 border-t border-border">
-                  <Button variant="outline" className="flex-1 h-10" onClick={() => { setShowAuthModal('login'); setMobileMenu(false); }}>
-                    {t.landing.nav.login}
-                  </Button>
-                  <Button className="flex-1 h-10" onClick={() => { setShowAuthModal('register'); setMobileMenu(false); }}>
-                    {t.landing.nav.getStarted}
-                  </Button>
-                </div>
               </div>
             </motion.div>
           )}

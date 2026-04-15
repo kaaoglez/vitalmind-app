@@ -23,8 +23,9 @@ import Habits from './habits/Habits';
 import Social from './social/Social';
 import Prevention from './prevention/Prevention';
 import Reports from './reports/Reports';
+import AccountSettings from './account-settings/AccountSettings';
 
-export type Section = 'dashboard' | 'mentalHealth' | 'nutrition' | 'exercise' | 'hydration' | 'sleep' | 'biomarkers' | 'habits' | 'social' | 'prevention' | 'challenges' | 'progress' | 'crisisNumbers' | 'profile' | 'assessment' | 'reports' | 'userProfile';
+export type Section = 'dashboard' | 'mentalHealth' | 'nutrition' | 'exercise' | 'hydration' | 'sleep' | 'biomarkers' | 'habits' | 'social' | 'prevention' | 'challenges' | 'progress' | 'crisisNumbers' | 'profile' | 'assessment' | 'reports' | 'userProfile' | 'accountSettings';
 
 export default function WellnessApp() {
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
@@ -82,6 +83,7 @@ export default function WellnessApp() {
       case 'userProfile': return <UserProfile embedded />;
       case 'crisisNumbers': return <CrisisNumbers />;
       case 'profile': return <Profile />;
+      case 'accountSettings': return <AccountSettings />;
       default: return <Dashboard onNavigate={setActiveSection} />;
     }
   };
@@ -99,6 +101,7 @@ export default function WellnessApp() {
           darkMode={darkMode}
           onToggleDarkMode={toggleDarkMode}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onNavigate={(section) => setActiveSection(section as Section)}
         />
         <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-8 pb-20 lg:pb-8">
           <div className="max-w-7xl mx-auto section-enter">

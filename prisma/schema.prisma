@@ -15,6 +15,7 @@ model User {
   passwordHash String?
   googleId     String?        @unique
   avatar       String?
+  phone        String?
   language     String         @default("en")
   darkMode     Boolean        @default(false)
   plan         String         @default("free")

@@ -3,7 +3,7 @@
 import React from 'react';
 import { useLanguage, Language } from '@/lib/i18n/LanguageContext';
 import { useAuthStore } from '@/lib/auth/authStore';
-import { Moon, Sun, Menu, Globe, LogOut, User, LogIn } from 'lucide-react';
+import { Moon, Sun, Menu, Globe, LogOut, User, LogIn, Settings } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,9 +25,10 @@ interface HeaderProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
   onToggleSidebar: () => void;
+  onNavigate?: (section: string) => void;
 }
 
-export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: HeaderProps) {
+export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar, onNavigate }: HeaderProps) {
   const { language, setLanguage, t } = useLanguage();
   const { user, logout, updateLanguage } = useAuthStore();
   const [langOpen, setLangOpen] = React.useState(false);
@@ -39,8 +40,8 @@ export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: 
     : '?';
 
   return (
-    <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-20">
-      <div className="flex items-center gap-3">
+    <header className="h-16 flex items-center justify-between px-3 sm:px-4 md:px-6 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-20">
+      <div className="flex items-center gap-2">
         <button
           onClick={onToggleSidebar}
           className="p-2 rounded-lg hover:bg-accent/10 text-muted-foreground lg:hidden"
@@ -49,16 +50,16 @@ export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: 
         </button>
       </div>
 
-      <div className="flex items-center gap-2">
-        {/* Language Switcher */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Language Switcher — click-to-open, works on all screen sizes */}
         <div className="relative">
           <button
             onClick={() => setLangOpen(!langOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-accent/10 text-sm text-muted-foreground transition-colors"
+            className="flex items-center gap-1 px-2 py-2 rounded-lg hover:bg-accent/10 text-muted-foreground transition-colors"
           >
             <Globe className="w-4 h-4" />
-            <span className="hidden sm:inline">{currentLang.flag} {currentLang.code.toUpperCase()}</span>
-            <span className="sm:hidden">{currentLang.flag}</span>
+            <span className="hidden sm:inline text-sm">{currentLang.flag} {currentLang.code.toUpperCase()}</span>
+            <span className="sm:hidden text-sm">{currentLang.flag}</span>
           </button>
 
           {langOpen && (
@@ -121,14 +122,24 @@ export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: 
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={() => onNavigate?.('accountSettings')}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>{t.accountSettings?.title || 'Account Settings'}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={() => onNavigate?.('profile')}
+              >
                 <User className="mr-2 h-4 w-4" />
-                <span>{t.common.profile}</span>
+                <span>{t.profile?.title || t.common.profile}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
-                onClick={() => logout()}
+                onSelect={() => logout()}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>{t.common.logout}</span>
@@ -138,10 +149,10 @@ export default function Header({ darkMode, onToggleDarkMode, onToggleSidebar }: 
         ) : (
           <button
             onClick={() => useAuthStore.getState().setShowAuthModal('login')}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             <LogIn className="w-4 h-4" />
-            <span className="sm:inline">{t.landing.nav.login}</span>
+            <span>{t.landing.nav.login}</span>
           </button>
         )}
       </div>
